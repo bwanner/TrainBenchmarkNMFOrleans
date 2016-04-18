@@ -24,18 +24,24 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
-namespace TTC2015.TrainBenchmark.Railway
+namespace TTC2015.TrainBenchmark.Orleans.Railway
 {
     
-    [Serializable]
-    public enum Signal
+    
+    /// <summary>
+    /// The public interface for Semaphore
+    /// </summary>
+    public interface ISemaphore : IRailwayElement
     {
-        
-        FAILURE = 1,
-        
-        STOP = 2,
-        
-        GO = 2,
+
+        /// <summary>
+        /// The signal property
+        /// </summary>
+        TTC2015.TrainBenchmark.Railway.Signal Signal
+        {
+            get;
+            set;
+        }
     }
 }
 

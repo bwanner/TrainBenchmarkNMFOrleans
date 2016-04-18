@@ -24,18 +24,24 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
-namespace TTC2015.TrainBenchmark.Railway
+namespace TTC2015.TrainBenchmark.Orleans.Railway
 {
     
-    [Serializable]
-    public enum Signal
+    
+    /// <summary>
+    /// The public interface for RailwayElement
+    /// </summary>
+    public interface IRailwayElement
     {
         
-        FAILURE = 1,
-        
-        STOP = 2,
-        
-        GO = 2,
+        /// <summary>
+        /// The id property
+        /// </summary>
+        Nullable<int> Id
+        {
+            get;
+            set;
+        }
     }
 }
 

@@ -31,14 +31,16 @@ namespace TTC2015.TrainBenchmark.Railway
     [XmlNamespaceAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark")]
     [XmlNamespacePrefixAttribute("hu.bme.mit.trainbenchmark")]
     [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Segment/")]
-    public class Segment : TrackElement, ISegment, IModelElement
+    public class Segment : TrackElement, ISegment, ITrainBenchmarkModelElement<TTC2015.TrainBenchmark.Orleans.Railway.ISegment>
     {
         
         /// <summary>
         /// The backing field for the Length property
         /// </summary>
         private int _length;
-        
+
+        private Orleans.Railway.IRailwayElement _serialized = null;
+
         /// <summary>
         /// The length property
         /// </summary>
@@ -85,6 +87,23 @@ namespace TTC2015.TrainBenchmark.Railway
         public override NMF.Models.Meta.IClass GetClass()
         {
             return NMF.Models.Repository.MetaRepository.Instance.ResolveClass("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Segment/");
+        }
+
+        public override Orleans.Railway.IRailwayElement ToSerializableModelElement()
+        {
+            var segment = new Orleans.Railway.Segment();
+            if (_serialized != null)
+                return _serialized;
+
+            _serialized = segment;
+            segment.Length = this.Length;
+            segment.ConnectsTo.AddRange(this.ConnectsTo.Select(o => (Orleans.Railway.ITrackElement) o.ToSerializableModelElement()));
+            return segment;
+        }
+
+        Orleans.Railway.ISegment ISerializableModelElement<Orleans.Railway.ISegment>.ToSerializableModelElement()
+        {
+            return (Orleans.Railway.ISegment) ToSerializableModelElement();
         }
     }
 }

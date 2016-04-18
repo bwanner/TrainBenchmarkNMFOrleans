@@ -37,7 +37,7 @@ namespace TTC2015.TrainBenchmark.Railway
         "")]
     [XmlDefaultImplementationTypeAttribute(typeof(RailwayContainer))]
     [DefaultImplementationTypeAttribute(typeof(RailwayContainer))]
-    public interface IRailwayContainer : IModelElement
+    public interface IRailwayContainer : ITrainBenchmarkModelElement<TTC2015.TrainBenchmark.Orleans.Railway.IRailwayContainer>
     {
         
         /// <summary>

@@ -1,0 +1,11 @@
+﻿3 Containers:
+
+IRailwayElement
+ISempahore
+IRoute
+
+-> Select = RailwayContainer
+
+Oder:
+
+1 Container mit IRailwayContainer -> Select Anfrage -> ... (PosLength!)

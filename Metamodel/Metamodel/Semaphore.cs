@@ -31,14 +31,16 @@ namespace TTC2015.TrainBenchmark.Railway
     [XmlNamespaceAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark")]
     [XmlNamespacePrefixAttribute("hu.bme.mit.trainbenchmark")]
     [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Semaphore/")]
-    public class Semaphore : RailwayElement, ISemaphore, IModelElement
+    public class Semaphore : RailwayElement, ISemaphore, ISerializableModelElement<TTC2015.TrainBenchmark.Orleans.Railway.ISemaphore>
     {
         
         /// <summary>
         /// The backing field for the Signal property
         /// </summary>
         private Signal _signal;
-        
+
+        private Orleans.Railway.IRailwayElement _serialized = null;
+
         /// <summary>
         /// The signal property
         /// </summary>
@@ -85,6 +87,23 @@ namespace TTC2015.TrainBenchmark.Railway
         public override NMF.Models.Meta.IClass GetClass()
         {
             return NMF.Models.Repository.MetaRepository.Instance.ResolveClass("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Semaphore/");
+        }
+
+        public override Orleans.Railway.IRailwayElement ToSerializableModelElement()
+        {
+            var semaphore = new TTC2015.TrainBenchmark.Orleans.Railway.Semaphore();
+            if (_serialized != null)
+                return _serialized;
+
+            _serialized = semaphore;
+            semaphore.Signal = this.Signal;
+
+            return semaphore;;
+        }
+
+        Orleans.Railway.ISemaphore ISerializableModelElement<Orleans.Railway.ISemaphore>.ToSerializableModelElement()
+        {
+            return (Orleans.Railway.ISemaphore) ToSerializableModelElement();
         }
     }
 }

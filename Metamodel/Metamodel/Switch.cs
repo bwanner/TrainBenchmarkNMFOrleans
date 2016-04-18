@@ -23,6 +23,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using SL = System.Linq;
 
 namespace TTC2015.TrainBenchmark.Railway
 {
@@ -31,7 +32,7 @@ namespace TTC2015.TrainBenchmark.Railway
     [XmlNamespaceAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark")]
     [XmlNamespacePrefixAttribute("hu.bme.mit.trainbenchmark")]
     [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Switch/")]
-    public class Switch : TrackElement, ISwitch, IModelElement
+    public class Switch : TrackElement, ISwitch 
     {
         
         /// <summary>
@@ -121,7 +122,7 @@ namespace TTC2015.TrainBenchmark.Railway
         {
             return NMF.Models.Repository.MetaRepository.Instance.ResolveClass("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Switch/");
         }
-        
+
         /// <summary>
         /// The collection class to to represent the children of the Switch class
         /// </summary>
@@ -242,8 +243,23 @@ namespace TTC2015.TrainBenchmark.Railway
             /// <returns>A generic enumerator</returns>
             public override IEnumerator<IModelElement> GetEnumerator()
             {
-                return Enumerable.Empty<IModelElement>().Concat(this._parent.Positions).GetEnumerator();
+                return SL.Enumerable.Empty<IModelElement>().Concat(this._parent.Positions).GetEnumerator();
             }
+        }
+
+
+        private Orleans.Railway.Switch _serialized = null;
+        public override Orleans.Railway.IRailwayElement ToSerializableModelElement()
+        {
+            var sw = new Orleans.Railway.Switch();
+            if (_serialized != null)
+                return _serialized;
+
+            _serialized = sw;
+            sw.CurrentPosition = this.CurrentPosition;
+            sw.Positions.AddRange(this.Positions.ToList().Select(o => (Orleans.Railway.ISwitchPosition) o.ToSerializableModelElement()));
+
+            return _serialized;
         }
     }
 }

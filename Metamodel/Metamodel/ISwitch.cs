@@ -36,7 +36,7 @@ namespace TTC2015.TrainBenchmark.Railway
     [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Switch/")]
     [XmlDefaultImplementationTypeAttribute(typeof(Switch))]
     [DefaultImplementationTypeAttribute(typeof(Switch))]
-    public interface ISwitch : IModelElement, ITrackElement
+    public interface ISwitch : ITrackElement
     {
         
         /// <summary>

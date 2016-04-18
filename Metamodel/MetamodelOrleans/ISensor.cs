@@ -24,18 +24,28 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
-namespace TTC2015.TrainBenchmark.Railway
+namespace TTC2015.TrainBenchmark.Orleans.Railway
 {
     
-    [Serializable]
-    public enum Signal
+    
+    /// <summary>
+    /// The public interface for Sensor
+    /// </summary>
+    [XmlNamespaceAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark")]
+    [XmlNamespacePrefixAttribute("hu.bme.mit.trainbenchmark")]
+    [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Sensor/")]
+    [XmlDefaultImplementationTypeAttribute(typeof(Sensor))]
+    [DefaultImplementationTypeAttribute(typeof(Sensor))]
+    public interface ISensor : IRailwayElement
     {
-        
-        FAILURE = 1,
-        
-        STOP = 2,
-        
-        GO = 2,
+
+        /// <summary>
+        /// The elements property
+        /// </summary>
+        IList<ITrackElement> Elements
+        {
+            get;
+        }
     }
 }
 

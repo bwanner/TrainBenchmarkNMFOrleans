@@ -24,18 +24,32 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
-namespace TTC2015.TrainBenchmark.Railway
+namespace TTC2015.TrainBenchmark.Orleans.Railway
 {
     
-    [Serializable]
-    public enum Signal
+    
+    /// <summary>
+    /// The public interface for Switch
+    /// </summary>
+    public interface ISwitch : ITrackElement
     {
-        
-        FAILURE = 1,
-        
-        STOP = 2,
-        
-        GO = 2,
+
+        /// <summary>
+        /// The currentPosition property
+        /// </summary>
+        TTC2015.TrainBenchmark.Railway.Position CurrentPosition
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// The positions property
+        /// </summary>
+        IList<ISwitchPosition> Positions
+        {
+            get;
+        }
     }
 }
 

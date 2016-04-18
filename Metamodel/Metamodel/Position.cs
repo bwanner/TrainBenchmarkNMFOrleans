@@ -27,7 +27,7 @@ using System.Linq;
 namespace TTC2015.TrainBenchmark.Railway
 {
     
-    
+    [Serializable]
     public enum Position
     {
         

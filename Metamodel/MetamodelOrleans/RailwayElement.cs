@@ -24,18 +24,35 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
-namespace TTC2015.TrainBenchmark.Railway
+namespace TTC2015.TrainBenchmark.Orleans.Railway
 {
     
+    
     [Serializable]
-    public enum Signal
+    public abstract class RailwayElement : IRailwayElement 
     {
         
-        FAILURE = 1,
+        /// <summary>
+        /// The backing field for the Id property
+        /// </summary>
+        private Nullable<int> _id;
         
-        STOP = 2,
-        
-        GO = 2,
+        /// <summary>
+        /// The id property
+        /// </summary>
+        [XmlElementNameAttribute("id")]
+        [XmlAttributeAttribute(true)]
+        public virtual Nullable<int> Id
+        {
+            get
+            {
+                return this._id;
+            }
+            set
+            {
+                    this._id = value;
+            }
+        }
     }
 }
 

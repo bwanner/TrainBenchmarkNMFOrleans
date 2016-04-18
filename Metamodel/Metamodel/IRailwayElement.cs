@@ -36,7 +36,7 @@ namespace TTC2015.TrainBenchmark.Railway
     [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//RailwayElement/")]
     [XmlDefaultImplementationTypeAttribute(typeof(RailwayElement))]
     [DefaultImplementationTypeAttribute(typeof(RailwayElement))]
-    public interface IRailwayElement : IModelElement
+    public interface IRailwayElement: ITrainBenchmarkModelElement<TTC2015.TrainBenchmark.Orleans.Railway.IRailwayElement>
     {
         
         /// <summary>

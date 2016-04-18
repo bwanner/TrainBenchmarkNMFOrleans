@@ -24,18 +24,37 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
-namespace TTC2015.TrainBenchmark.Railway
+namespace TTC2015.TrainBenchmark.Orleans.Railway
 {
     
     [Serializable]
-    public enum Signal
+    public class Sensor : RailwayElement, ISensor
     {
         
-        FAILURE = 1,
+        /// <summary>
+        /// The backing field for the Elements property
+        /// </summary>
+        private IList<ITrackElement> _elements;
         
-        STOP = 2,
+        public Sensor()
+        {
+            this._elements = new List<ITrackElement>();
+        }
         
-        GO = 2,
+        /// <summary>
+        /// The elements property
+        /// </summary>
+        [DesignerSerializationVisibilityAttribute(DesignerSerializationVisibility.Content)]
+        [XmlElementNameAttribute("elements")]
+        [XmlAttributeAttribute(false)]
+        [ContainmentAttribute()]
+        public virtual IList<ITrackElement> Elements
+        {
+            get
+            {
+                return this._elements;
+            }
+        }
     }
 }
 

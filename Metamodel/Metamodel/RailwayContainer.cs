@@ -32,7 +32,7 @@ namespace TTC2015.TrainBenchmark.Railway
     [XmlNamespacePrefixAttribute("hu.bme.mit.trainbenchmark")]
     [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//RailwayContainer/" +
         "")]
-    public class RailwayContainer : ModelElement, IRailwayContainer, IModelElement
+    public class RailwayContainer : ModelElement, IRailwayContainer, ITrainBenchmarkModelElement<TTC2015.TrainBenchmark.Orleans.Railway.IRailwayContainer>
     {
         
         /// <summary>
@@ -585,6 +585,22 @@ namespace TTC2015.TrainBenchmark.Railway
                 return Enumerable.Empty<IModelElement>().Concat(this._parent.Invalids).Concat(this._parent.Semaphores).Concat(this._parent.Routes).GetEnumerator();
             }
         }
+
+        public Orleans.Railway.IRailwayContainer ToSerializableModelElement()
+        {
+            var container = new Orleans.Railway.RailwayContainer();
+            if (_serialized != null)
+                return _serialized;
+
+            _serialized = container;
+            container.Invalids.AddRange(this.Invalids.Select(o => o.ToSerializableModelElement()));
+            container.Routes.AddRange(this.Routes.Select(o => (Orleans.Railway.IRoute) o.ToSerializableModelElement()));
+            container.Semaphores.AddRange(this.Semaphores.Select(o => (Orleans.Railway.ISemaphore) o.ToSerializableModelElement()));
+
+            return container;
+        }
+
+        public Orleans.Railway.IRailwayContainer _serialized = null;
     }
 }
 

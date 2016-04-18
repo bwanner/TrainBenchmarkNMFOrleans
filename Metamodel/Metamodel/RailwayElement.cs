@@ -23,6 +23,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using TTC2015.TrainBenchmark.Orleans.Railway;
 
 namespace TTC2015.TrainBenchmark.Railway
 {
@@ -86,6 +87,8 @@ namespace TTC2015.TrainBenchmark.Railway
         {
             return NMF.Models.Repository.MetaRepository.Instance.ResolveClass("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//RailwayElement/");
         }
+
+        public abstract Orleans.Railway.IRailwayElement ToSerializableModelElement();
     }
 }
 

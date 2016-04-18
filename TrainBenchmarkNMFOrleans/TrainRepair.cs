@@ -18,7 +18,7 @@ namespace TTC2015.TrainBenchmark
         public QueryPattern InjectPattern { get; set; }
         public Random Random { get; set; }
 
-        public void RepairTrains(RailwayContainer rc, string task)
+        public void RepairTrains(RailwayContainer rc, string task, TTC2015.TrainBenchmark.Orleans.Railway.RailwayContainer serializedContainer)
         {
             Random = new Random(0);
 			var routes = rc.Routes.Concat (rc.Invalids.OfType<Route> ());
@@ -80,6 +80,7 @@ namespace TTC2015.TrainBenchmark
             }
             if (task == "SwitchSensor")
             {
+                CompareMatches(rc.Descendants().OfType<Switch>().Where(sw => sw.Sensor == null), serializedContainer);
                 // SwitchSensor
                 Fix(pattern: rc.Descendants().OfType<Switch>().Where(sw => sw.Sensor == null),
                     action: sw => sw.Sensor = new Sensor(),
@@ -153,6 +154,28 @@ namespace TTC2015.TrainBenchmark
             }
         }
 
+        protected void CompareMatches<T>(IEnumerableExpression<T> pattern, IEnumerable<T> cmpResult, Func<T, string> sortKey, Func<T, T, bool> cmpFunc)
+        {
+            var matchesOne = (from match in pattern
+                    select new Tuple<string, T>(sortKey(match), match)).ToList();
+
+            var matchesTwo = (from match in cmpResult
+                    select new Tuple<string, T>(sortKey(match), match)).ToList();
+
+
+            if (matchesOne.Count != matchesTwo.Count)
+            {
+                throw new ArgumentException("Invalid result");
+            }
+            for (int i = 0; i < matchesOne.Count; i++)
+            {
+                if (!cmpFunc(matchesOne[i].Item2, matchesTwo[i].Item2))
+                {
+                    throw new ArgumentException("Invalid result");
+                }
+            }
+        }
+
         protected abstract void Fix<T>(IEnumerableExpression<T> pattern, Action<T> action, Func<T, string> sortKey);
 
         protected abstract void Inject<T>(IEnumerableExpression<T> pattern, Action<T> action, Func<T, string> sortKey);
@@ -220,6 +243,11 @@ namespace TTC2015.TrainBenchmark
             {
                 Source.Detach();
             }
+        }
+
+        protected override void CompareMatches<T>(IEnumerableExpression<T> pattern, IEnumerable<T> cmpResult, Func<T, string> sortKey)
+        {
+            throw new NotImplementedException();
         }
 
         protected override void Fix<T>(IEnumerableExpression<T> pattern, Action<T> action, Func<T, string> sortKey)

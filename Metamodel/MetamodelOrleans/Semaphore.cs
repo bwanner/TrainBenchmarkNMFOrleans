@@ -24,18 +24,37 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
-namespace TTC2015.TrainBenchmark.Railway
+namespace TTC2015.TrainBenchmark.Orleans.Railway
 {
     
     [Serializable]
-    public enum Signal
+    public class Semaphore : RailwayElement, ISemaphore
     {
         
-        FAILURE = 1,
+        /// <summary>
+        /// The backing field for the Signal property
+        /// </summary>
+        private TTC2015.TrainBenchmark.Railway.Signal _signal;
         
-        STOP = 2,
-        
-        GO = 2,
+        /// <summary>
+        /// The signal property
+        /// </summary>
+        [XmlElementNameAttribute("signal")]
+        [XmlAttributeAttribute(true)]
+        public virtual TTC2015.TrainBenchmark.Railway.Signal Signal
+        {
+            get
+            {
+                return this._signal;
+            }
+            set
+            {
+                if ((value != this._signal))
+                {
+                    this._signal = value;
+                }
+            }
+        }
     }
 }
 

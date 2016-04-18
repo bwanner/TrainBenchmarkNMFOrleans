@@ -36,6 +36,10 @@ namespace TTC2015.TrainBenchmark
                     var train = repository.Resolve(new Uri(new FileInfo(configuration.Target).FullName));
                     var railwayContainer = train.Model.RootElements.Single() as RailwayContainer;
 
+                    if (railwayContainer != null)
+                    {
+                        var dto = railwayContainer.ToSerializableModelElement();
+                    }
 
                     TrainRepair trainRepair = null;
                     if (!configuration.Batch)

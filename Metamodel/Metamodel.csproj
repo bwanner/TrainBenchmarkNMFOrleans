@@ -48,6 +48,15 @@
     <Reference Include="NMF.Utilities">
       <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Debug\NMF.Utilities.dll</HintPath>
     </Reference>
+    <Reference Include="Orleans">
+      <HintPath>..\..\..\..\MA\code\orleans\Binaries\Debug\Orleans.dll</HintPath>
+    </Reference>
+    <Reference Include="Orleans.Collections">
+      <HintPath>..\..\..\..\..\Source\Repos\NMF\Expressions.Linq.Orleans\bin\Debug\Orleans.Collections.dll</HintPath>
+    </Reference>
+    <Reference Include="Orleans.Streams">
+      <HintPath>..\..\..\..\..\Source\Repos\NMF\Expressions.Linq.Orleans\bin\Debug\Orleans.Streams.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -58,12 +67,32 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MetamodelOrleans\IOrleansModelElement.cs" />
+    <Compile Include="MetamodelOrleans\IRailwayContainer.cs" />
+    <Compile Include="MetamodelOrleans\IRailwayElement.cs" />
+    <Compile Include="MetamodelOrleans\IRoute.cs" />
+    <Compile Include="MetamodelOrleans\ISegment.cs" />
+    <Compile Include="MetamodelOrleans\ISemaphore.cs" />
+    <Compile Include="MetamodelOrleans\ISensor.cs" />
+    <Compile Include="MetamodelOrleans\ISwitch.cs" />
+    <Compile Include="MetamodelOrleans\ISwitchPosition.cs" />
+    <Compile Include="MetamodelOrleans\ITrackElement.cs" />
+    <Compile Include="MetamodelOrleans\RailwayContainer.cs" />
+    <Compile Include="MetamodelOrleans\RailwayElement.cs" />
+    <Compile Include="MetamodelOrleans\Route.cs" />
+    <Compile Include="MetamodelOrleans\Segment.cs" />
+    <Compile Include="MetamodelOrleans\Semaphore.cs" />
+    <Compile Include="MetamodelOrleans\Sensor.cs" />
+    <Compile Include="MetamodelOrleans\Switch.cs" />
+    <Compile Include="MetamodelOrleans\SwitchPosition.cs" />
+    <Compile Include="MetamodelOrleans\TrackElement.cs" />
     <Compile Include="Metamodel\IRailwayContainer.cs" />
     <Compile Include="Metamodel\IRailwayElement.cs" />
     <Compile Include="Metamodel\IRoute.cs" />
     <Compile Include="Metamodel\ISegment.cs" />
     <Compile Include="Metamodel\ISemaphore.cs" />
     <Compile Include="Metamodel\ISensor.cs" />
+    <Compile Include="Metamodel\ISerializableModelElement.cs" />
     <Compile Include="Metamodel\ISwitch.cs" />
     <Compile Include="Metamodel\ISwitchPosition.cs" />
     <Compile Include="Metamodel\ITrackElement.cs" />
@@ -81,7 +110,11 @@
     <Compile Include="Metamodel\SwitchPosition.cs" />
     <Compile Include="Metamodel\SwitchPositionsCollection.cs" />
     <Compile Include="Metamodel\TrackElement.cs" />
+    <Compile Include="Metamodel\ITrainBenchmarkModelElement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="MetamodelOrleans\Conceptual.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
