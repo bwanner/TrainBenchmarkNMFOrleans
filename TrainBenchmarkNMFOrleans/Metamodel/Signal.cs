@@ -24,24 +24,18 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
-namespace TTC2015.TrainBenchmark.Orleans.Railway
+namespace TTC2015.TrainBenchmark.Railway
 {
     
     
-    /// <summary>
-    /// The public interface for Segment
-    /// </summary>
-    public interface ISegment : ITrackElement
+    public enum Signal
     {
         
-        /// <summary>
-        /// The length property
-        /// </summary>
-        int Length
-        {
-            get;
-            set;
-        }
+        FAILURE = 1,
+        
+        STOP = 2,
+        
+        GO = 2,
     }
 }
 

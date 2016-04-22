@@ -24,32 +24,34 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
-namespace TTC2015.TrainBenchmark.Orleans.Railway
+namespace TTC2015.TrainBenchmark.Railway
 {
     
     
     /// <summary>
-    /// The public interface for Switch
+    /// The public interface for RailwayElement
     /// </summary>
-    public interface ISwitch : ITrackElement
+    [XmlNamespaceAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark")]
+    [XmlNamespacePrefixAttribute("hu.bme.mit.trainbenchmark")]
+    [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//RailwayElement/")]
+    [XmlDefaultImplementationTypeAttribute(typeof(RailwayElement))]
+    [DefaultImplementationTypeAttribute(typeof(RailwayElement))]
+    public interface IRailwayElement : IModelElement
     {
-
+        
         /// <summary>
-        /// The currentPosition property
+        /// The id property
         /// </summary>
-        TTC2015.TrainBenchmark.Railway.Position CurrentPosition
+        Nullable<int> Id
         {
             get;
             set;
         }
-
+        
         /// <summary>
-        /// The positions property
+        /// Gets fired when the Id property changed its value
         /// </summary>
-        IList<ISwitchPosition> Positions
-        {
-            get;
-        }
+        event EventHandler IdChanged;
     }
 }
 

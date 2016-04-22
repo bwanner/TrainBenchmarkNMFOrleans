@@ -31,16 +31,14 @@ namespace TTC2015.TrainBenchmark.Railway
     [XmlNamespaceAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark")]
     [XmlNamespacePrefixAttribute("hu.bme.mit.trainbenchmark")]
     [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Sensor/")]
-    public class Sensor : RailwayElement, ISensor, ISerializableModelElement<TTC2015.TrainBenchmark.Orleans.Railway.ISensor>
+    public class Sensor : RailwayElement, ISensor, IModelElement
     {
         
         /// <summary>
         /// The backing field for the Elements property
         /// </summary>
         private SensorElementsCollection _elements;
-
-        private Orleans.Railway.IRailwayElement _serialized = null;
-
+        
         public Sensor()
         {
             this._elements = new SensorElementsCollection(this);
@@ -127,23 +125,7 @@ namespace TTC2015.TrainBenchmark.Railway
         {
             return NMF.Models.Repository.MetaRepository.Instance.ResolveClass("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Sensor/");
         }
-
-        public override Orleans.Railway.IRailwayElement ToSerializableModelElement()
-        {
-            var sensor = new TTC2015.TrainBenchmark.Orleans.Railway.Sensor();
-            if (_serialized != null)
-                return _serialized;
-
-            _serialized = sensor;
-            sensor.Elements.AddRange(this.Elements.Select(o => (TTC2015.TrainBenchmark.Orleans.Railway.ITrackElement) o.ToSerializableModelElement()));
-            return sensor;
-        }
-
-        TTC2015.TrainBenchmark.Orleans.Railway.ISensor ISerializableModelElement<TTC2015.TrainBenchmark.Orleans.Railway.ISensor>.ToSerializableModelElement()
-        {
-            return (Orleans.Railway.ISensor) ToSerializableModelElement();
-        }
-
+        
         /// <summary>
         /// The collection class to to represent the children of the Sensor class
         /// </summary>

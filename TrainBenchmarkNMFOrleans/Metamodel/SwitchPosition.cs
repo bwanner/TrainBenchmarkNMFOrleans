@@ -31,7 +31,7 @@ namespace TTC2015.TrainBenchmark.Railway
     [XmlNamespaceAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark")]
     [XmlNamespacePrefixAttribute("hu.bme.mit.trainbenchmark")]
     [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//SwitchPosition/")]
-    public class SwitchPosition : RailwayElement, ISwitchPosition, ISerializableModelElement<Orleans.Railway.ISwitchPosition>
+    public class SwitchPosition : RailwayElement, ISwitchPosition, IModelElement
     {
         
         /// <summary>
@@ -43,9 +43,7 @@ namespace TTC2015.TrainBenchmark.Railway
         /// The backing field for the Switch property
         /// </summary>
         private ISwitch _switch;
-
-        private Orleans.Railway.IRailwayElement _serialized = null;
-
+        
         /// <summary>
         /// The position property
         /// </summary>
@@ -225,7 +223,7 @@ namespace TTC2015.TrainBenchmark.Railway
         {
             return NMF.Models.Repository.MetaRepository.Instance.ResolveClass("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//SwitchPosition/");
         }
-
+        
         /// <summary>
         /// The collection class to to represent the children of the SwitchPosition class
         /// </summary>
@@ -374,26 +372,6 @@ namespace TTC2015.TrainBenchmark.Railway
             {
                 return Enumerable.Empty<IModelElement>().Concat(this._parent.Switch).Concat(this._parent.Route).GetEnumerator();
             }
-        }
-
-
-        public override Orleans.Railway.IRailwayElement ToSerializableModelElement()
-        {
-            var switchPosition = new Orleans.Railway.SwitchPosition();
-            if (_serialized != null)
-                return _serialized;
-
-            _serialized = switchPosition;
-            switchPosition.Switch = (Orleans.Railway.ISwitch) this.Switch.ToSerializableModelElement();
-            switchPosition.Position = this.Position;
-            switchPosition.Route = (Orleans.Railway.IRoute) this.Route.ToSerializableModelElement();
-
-            return switchPosition;
-        }
-
-        Orleans.Railway.ISwitchPosition ISerializableModelElement<Orleans.Railway.ISwitchPosition>.ToSerializableModelElement()
-        {
-            return (Orleans.Railway.ISwitchPosition) ToSerializableModelElement();
         }
     }
 }

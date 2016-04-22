@@ -23,7 +23,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using TTC2015.TrainBenchmark.Orleans.Railway;
 
 namespace TTC2015.TrainBenchmark.Railway
 {
@@ -31,49 +30,49 @@ namespace TTC2015.TrainBenchmark.Railway
     
     [XmlNamespaceAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark")]
     [XmlNamespacePrefixAttribute("hu.bme.mit.trainbenchmark")]
-    [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//RailwayElement/")]
-    public abstract class RailwayElement : ModelElement, IRailwayElement, IModelElement
+    [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Segment/")]
+    public class Segment : TrackElement, ISegment, IModelElement
     {
         
         /// <summary>
-        /// The backing field for the Id property
+        /// The backing field for the Length property
         /// </summary>
-        private Nullable<int> _id;
+        private int _length;
         
         /// <summary>
-        /// The id property
+        /// The length property
         /// </summary>
-        [XmlElementNameAttribute("id")]
+        [XmlElementNameAttribute("length")]
         [XmlAttributeAttribute(true)]
-        public virtual Nullable<int> Id
+        public virtual int Length
         {
             get
             {
-                return this._id;
+                return this._length;
             }
             set
             {
-                if ((value != this._id))
+                if ((value != this._length))
                 {
-                    this._id = value;
-                    this.OnIdChanged(EventArgs.Empty);
-                    this.OnPropertyChanged("Id");
+                    this._length = value;
+                    this.OnLengthChanged(EventArgs.Empty);
+                    this.OnPropertyChanged("Length");
                 }
             }
         }
         
         /// <summary>
-        /// Gets fired when the Id property changed its value
+        /// Gets fired when the Length property changed its value
         /// </summary>
-        public event EventHandler IdChanged;
+        public event EventHandler LengthChanged;
         
         /// <summary>
-        /// Raises the IdChanged event
+        /// Raises the LengthChanged event
         /// </summary>
         /// <param name="eventArgs">The event data</param>
-        protected virtual void OnIdChanged(EventArgs eventArgs)
+        protected virtual void OnLengthChanged(EventArgs eventArgs)
         {
-            EventHandler handler = this.IdChanged;
+            EventHandler handler = this.LengthChanged;
             if ((handler != null))
             {
                 handler.Invoke(this, eventArgs);
@@ -85,10 +84,8 @@ namespace TTC2015.TrainBenchmark.Railway
         /// </summary>
         public override NMF.Models.Meta.IClass GetClass()
         {
-            return NMF.Models.Repository.MetaRepository.Instance.ResolveClass("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//RailwayElement/");
+            return NMF.Models.Repository.MetaRepository.Instance.ResolveClass("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Segment/");
         }
-
-        public abstract Orleans.Railway.IRailwayElement ToSerializableModelElement();
     }
 }
 

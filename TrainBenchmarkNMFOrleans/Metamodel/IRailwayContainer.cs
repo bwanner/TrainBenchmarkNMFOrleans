@@ -24,46 +24,42 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
-namespace TTC2015.TrainBenchmark.Orleans.Railway
+namespace TTC2015.TrainBenchmark.Railway
 {
     
     
     /// <summary>
-    /// The public interface for Route
+    /// The public interface for RailwayContainer
     /// </summary>
-    public interface IRoute : IRailwayElement
+    [XmlNamespaceAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark")]
+    [XmlNamespacePrefixAttribute("hu.bme.mit.trainbenchmark")]
+    [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//RailwayContainer/" +
+        "")]
+    [XmlDefaultImplementationTypeAttribute(typeof(RailwayContainer))]
+    [DefaultImplementationTypeAttribute(typeof(RailwayContainer))]
+    public interface IRailwayContainer : IModelElement
     {
         
         /// <summary>
-        /// The entry property
+        /// The invalids property
         /// </summary>
-        ISemaphore Entry
-        {
-            get;
-            set;
-        }
-        
-        /// <summary>
-        /// The follows property
-        /// </summary>
-        IList<ISwitchPosition> Follows
+        IListExpression<IRailwayElement> Invalids
         {
             get;
         }
         
         /// <summary>
-        /// The exit property
+        /// The semaphores property
         /// </summary>
-        ISemaphore Exit
+        IListExpression<ISemaphore> Semaphores
         {
             get;
-            set;
         }
-
+        
         /// <summary>
-        /// The definedBy property
+        /// The routes property
         /// </summary>
-        IList<ISensor> DefinedBy
+        IListExpression<IRoute> Routes
         {
             get;
         }

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NMF.Expressions;
+using NMF.Models;
 using TTC2015.TrainBenchmark.Railway;
 
 namespace TTC2015.TrainBenchmark
@@ -36,10 +37,19 @@ namespace TTC2015.TrainBenchmark
                     var train = repository.Resolve(new Uri(new FileInfo(configuration.Target).FullName));
                     var railwayContainer = train.Model.RootElements.Single() as RailwayContainer;
 
-                    if (railwayContainer != null)
-                    {
-                        var dto = railwayContainer.ToSerializableModelElement();
-                    }
+                    var routeUris = railwayContainer.Descendants().OfType<Route>().Select(x => x.RelativeUri).ToList();
+                    var resolvedRoutes = routeUris.Select(uri => train.Model.Resolve(uri)).ToList(); // All resolved
+
+                    var segmentUris = railwayContainer.Descendants().OfType<Segment>().Select(x => x.RelativeUri).ToList();
+                    var resolvedSegments = segmentUris.Select(uri => train.Model.Resolve(uri)).ToList(); // All null
+
+                    var outRepo = new ModelRepository();
+                    //outRepo.Save(railwayContainer.Routes.First().Entry, "test.xml");
+
+                    //if (railwayContainer != null)
+                    //{
+                    //    var dto = railwayContainer.Routes.First().ToSerializableModelElement();
+                    //}
 
                     TrainRepair trainRepair = null;
                     if (!configuration.Batch)

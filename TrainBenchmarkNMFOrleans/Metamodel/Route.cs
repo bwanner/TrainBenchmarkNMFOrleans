@@ -31,7 +31,7 @@ namespace TTC2015.TrainBenchmark.Railway
     [XmlNamespaceAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark")]
     [XmlNamespacePrefixAttribute("hu.bme.mit.trainbenchmark")]
     [ModelRepresentationClassAttribute("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Route/")]
-    public class Route : RailwayElement, IRoute, ITrainBenchmarkModelElement<TTC2015.TrainBenchmark.Orleans.Railway.IRoute>
+    public class Route : RailwayElement, IRoute, IModelElement
     {
         
         /// <summary>
@@ -53,9 +53,7 @@ namespace TTC2015.TrainBenchmark.Railway
         /// The backing field for the DefinedBy property
         /// </summary>
         private ObservableCompositionList<ISensor> _definedBy;
-
-        private Orleans.Railway.IRailwayElement _serialized = null;
-
+        
         public Route()
         {
             this._follows = new RouteFollowsCollection(this);
@@ -293,27 +291,7 @@ namespace TTC2015.TrainBenchmark.Railway
         {
             return NMF.Models.Repository.MetaRepository.Instance.ResolveClass("http://www.semanticweb.org/ontologies/2015/ttc/trainbenchmark#//Route/");
         }
-
-        public override Orleans.Railway.IRailwayElement ToSerializableModelElement()
-        {
-            var route = new Orleans.Railway.Route();
-            if (_serialized != null)
-                return _serialized;
-
-            _serialized = route;
-            route.Entry = (Orleans.Railway.ISemaphore) this.Entry?.ToSerializableModelElement();
-            route.Exit = (Orleans.Railway.ISemaphore) this.Exit?.ToSerializableModelElement();
-            route.Follows.AddRange(this.Follows.Select(o => (Orleans.Railway.ISwitchPosition) o.ToSerializableModelElement()));
-            route.DefinedBy.AddRange(this.DefinedBy.Select(o => (Orleans.Railway.ISensor) o.ToSerializableModelElement()));
-
-            return route;
-        }
-
-        Orleans.Railway.IRoute ISerializableModelElement<Orleans.Railway.IRoute>.ToSerializableModelElement()
-        {
-            return (Orleans.Railway.IRoute) this.ToSerializableModelElement();
-        }
-
+        
         /// <summary>
         /// The collection class to to represent the children of the Route class
         /// </summary>
