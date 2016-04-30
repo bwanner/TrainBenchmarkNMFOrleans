@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using NMF.Models;
 using NMF.Expressions;
 using NMF.Expressions.Linq;
-
-using TTC2015.TrainBenchmark.Railway;
+using NMF.Models.Tests.Railway;
 
 namespace TTC2015.TrainBenchmark
 {
@@ -81,7 +79,7 @@ namespace TTC2015.TrainBenchmark
             if (task == "SwitchSensor")
             {
                 //CompareMatches(rc.Descendants().OfType<Switch>().Where(sw => sw.Sensor == null), serializedContainer);
-                // SwitchSensor
+                // sslSwitchSensor
                 Fix(pattern: rc.Descendants().OfType<Switch>().Where(sw => sw.Sensor == null),
                     action: sw => sw.Sensor = new Sensor(),
                     sortKey: sw => string.Format("<sw : {0:0000}>", sw.Id.GetValueOrDefault()));
