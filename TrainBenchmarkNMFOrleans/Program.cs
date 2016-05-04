@@ -11,6 +11,7 @@ using NMF.Expressions;
 using NMF.Expressions.Linq.Orleans.Model;
 using NMF.Models;
 using NMF.Models.Tests.Railway;
+using NMF.Utilities;
 using Orleans;
 
 namespace TTC2015.TrainBenchmark
@@ -39,10 +40,7 @@ namespace TTC2015.TrainBenchmark
             //       or initializing an HTTP front end for accepting incoming requests.
 
 
-            Task.Run(async () =>
-            {
-                await AsyncMain(args);
-            }).Wait();
+            Task.Run(async () => { await AsyncMain(args); }).Wait();
 
 
             Console.WriteLine("Orleans Silo is running.\nPress Enter to terminate...");
@@ -102,20 +100,18 @@ namespace TTC2015.TrainBenchmark
                 Console.Error.WriteLine(ex.Message);
                 Environment.ExitCode = 1;
             }
-
         }
 
         private static async Task ExecuteRunOrleans(int i, bool validate = true)
         {
             TrainRepair trainRepair = null;
+            Model railwayModel = null;
             var fixedChangeSet = string.Equals(configuration.ChangeSet, "fixed", StringComparison.InvariantCultureIgnoreCase);
-            RailwayContainer railwayContainer = null;
             if (validate)
             {
                 var repository = new ModelRepository();
                 var train = repository.Resolve(new Uri(new FileInfo(configuration.Target).FullName));
-                railwayContainer = train.Model.RootElements.Single() as RailwayContainer;
-
+                railwayModel = train.Model;
             }
             if (!configuration.Batch)
             {
@@ -129,15 +125,14 @@ namespace TTC2015.TrainBenchmark
 
             if (validate)
             {
-                trainRepair.RepairTrains(railwayContainer, configuration.Query);
+                trainRepair.RepairTrains(railwayModel.RootElements.Single().As<RailwayContainer>(), configuration.Query);
             }
-
 
 
             stopwatch.Start();
 
             TrainRepairOrleans trainRepairOrleans = new IncrementalTrainRepairOrleans();
-            var modelContainer = GrainClient.GrainFactory.GetGrain<IModelContainerGrain<RailwayContainer>>(Guid.NewGuid());
+            var modelContainer = GrainClient.GrainFactory.GetGrain<IModelContainerGrain<Model>>(Guid.NewGuid());
             await modelContainer.LoadModelFromPath(configuration.Target);
             await trainRepairOrleans.RepairTrains(modelContainer, configuration.Query, GrainClient.GrainFactory);
 
@@ -156,7 +151,7 @@ namespace TTC2015.TrainBenchmark
                 var orleansElements = actions.Select(x => x.Item1).OrderBy(s => s).ToList();
                 var localElements = localActions.Select(x => x.Item1).OrderBy(s => s).ToList();
 
-                if(orleansElements.Count != localElements.Count)
+                if (orleansElements.Count != localElements.Count)
                     throw new ArgumentException();
                 for (int f = 0; f < orleansElements.Count; f++)
                 {
@@ -167,229 +162,186 @@ namespace TTC2015.TrainBenchmark
                 }
             }
 
-            if (!configuration.Inject)
+            var actionsSorted = (from pair in actions
+                orderby pair.Item1
+                select pair.Item2).ToList();
+
+            var localActionsSorted = (from pair in localActions
+                orderby pair.Item1
+                select pair.Item2).ToList();
+
+            for (int iter = 0; iter < configuration.IterationCount; iter++)
             {
-                var actionsSorted = (from pair in actions
-                                     orderby pair.Item1
-                                     select pair.Item2).ToList();
-
-                var localActionsSorted = (from pair in localActions
-                                     orderby pair.Item1
-                                     select pair.Item2).ToList();
-
-                for (int iter = 0; iter < configuration.IterationCount; iter++)
+                // Repair
+                if (fixedChangeSet)
                 {
-                    // Repair
-                    if (fixedChangeSet)
-                    {
-                        stopwatch.Restart();
-                        await trainRepairOrleans.RepairFixed(10, actionsSorted);
-                        stopwatch.Stop();
-                        if(validate)
-                            trainRepair.RepairFixed(10, localActionsSorted);
-                    }
-                    var containerXml = await modelContainer.ModelToString(container => container);
-                    var localXml = railwayContainer.ToXmlString();
-                    if (!containerXml.Equals(localXml))
-                    {
-                        throw new ArgumentException();
-                    }
-                    else
-                    {
-                        stopwatch.Restart();
-                        await trainRepairOrleans.RepairProportional(10, actionsSorted);
-                        stopwatch.Stop();
-                        if (validate)
-                            trainRepair.RepairProportional(10, localActionsSorted);
-                    }
-                    Emit("repair", i, iter, null);
-
-                    containerXml = await modelContainer.ModelToString(container => container);
-                    localXml = railwayContainer.ToXmlString();
-                    if (!containerXml.Equals(localXml))
-                    {
-                        throw new ArgumentException();
-                    }
-
-                    // ReCheck
                     stopwatch.Restart();
-                    actions = await trainRepairOrleans.Check();
+                    await trainRepairOrleans.RepairFixed(10, actionsSorted);
                     stopwatch.Stop();
-                    Emit("recheck", i, iter, actions.Count());
-
                     if (validate)
-                    {
-                        localActions = trainRepair.Check();
-                        var orleansElements = actions.Select(x => x.Item1).OrderBy(s => s).ToList();
-                        var localElements = localActions.Select(x => x.Item1).OrderBy(s => s).ToList();
+                        trainRepair.RepairFixed(10, localActionsSorted);
+                }
 
-                        if (orleansElements.Count != localElements.Count)
-                            throw new ArgumentException();
-                        for (int f = 0; f < orleansElements.Count; f++)
+                stopwatch.Restart();
+                await trainRepairOrleans.RepairProportional(10, actionsSorted);
+                stopwatch.Stop();
+                if (validate)
+                    trainRepair.RepairProportional(10, localActionsSorted);
+                Emit("repair", i, iter, null);
+
+                //containerXml = await modelContainer.ModelToString(container => container);
+                //localXml = railwayModel.ToXmlString();
+                //if (!containerXml.Equals(localXml))
+                //{
+                //    throw new ArgumentException();
+                //}
+
+                // ReCheck
+                stopwatch.Restart();
+                actions = await trainRepairOrleans.Check();
+                stopwatch.Stop();
+                Emit("recheck", i, iter, actions.Count());
+
+                if (validate)
+                {
+                    localActions = trainRepair.Check();
+                    var orleansElements = actions.Select(x => x.Item1).OrderBy(s => s).ToList();
+                    var localElements = localActions.Select(x => x.Item1).OrderBy(s => s).ToList();
+
+                    if (orleansElements.Count != localElements.Count)
+                        throw new ArgumentException();
+                    for (int f = 0; f < orleansElements.Count; f++)
+                    {
+                        if (orleansElements[f] != localElements[f])
                         {
-                            if (orleansElements[f] != localElements[f])
-                            {
-                                throw new ArgumentException();
-                            }
+                            throw new ArgumentException();
                         }
                     }
-
-                    actionsSorted = (from pair in actions
-                                     orderby pair.Item1
-                                     select pair.Item2).ToList();
-
-                    localActionsSorted = (from pair in localActions
-                                          orderby pair.Item1
-                                          select pair.Item2).ToList();
                 }
-            }
-            else
-            {
-                throw new NotImplementedException();
-                //var actionsSorted = (from pair in trainRepair.Inject()
-                //                     orderby pair.Item1
-                //                     select pair.Item2).ToList();
 
-                //for (int iter = 0; iter < configuration.IterationCount; iter++)
-                //{
-                //    // Repair
-                //    if (fixedChangeSet)
-                //    {
-                //        stopwatch.Restart();
-                //        trainRepair.RepairFixed(10, actionsSorted);
-                //        stopwatch.Stop();
-                //    }
-                //    else
-                //    {
-                //        stopwatch.Restart();
-                //        trainRepair.RepairProportional(10, actionsSorted);
-                //        stopwatch.Stop();
-                //    }
-                //    Emit("inject", i, iter, null);
+                actionsSorted = (from pair in actions
+                    orderby pair.Item1
+                    select pair.Item2).ToList();
 
-                //    // ReCheck
-                //    stopwatch.Restart();
-                //    //actions = trainRepair.Check();
-                //    stopwatch.Stop();
-                //    Emit("recheck", i, iter, actions.Count());
-
-                //    actionsSorted = (from pair in trainRepair.Inject()
-                //                     orderby pair.Item1
-                //                     select pair.Item2).ToList();
-                //}
+                localActionsSorted = (from pair in localActions
+                    orderby pair.Item1
+                    select pair.Item2).ToList();
             }
         }
 
-        private static void ExecuteRun(int i)
-        {
-            var fixedChangeSet = string.Equals(configuration.ChangeSet, "fixed", StringComparison.InvariantCultureIgnoreCase);
-            stopwatch.Start();
-            var repository = new ModelRepository();
-            var train = repository.Resolve(new Uri(new FileInfo(configuration.Target).FullName));
-            var railwayContainer = train.Model.RootElements.Single() as RailwayContainer;
+        //private static void ExecuteRun(int i)
+        //{
+        //    var fixedChangeSet = string.Equals(configuration.ChangeSet, "fixed", StringComparison.InvariantCultureIgnoreCase);
+        //    stopwatch.Start();
+        //    var repository = new ModelRepository();
+        //    var train = repository.Resolve(new Uri(new FileInfo(configuration.Target).FullName));
+        //    var railwayContainer = train.Model.RootElements.Single() as RailwayContainer;
 
-            TrainRepair trainRepair = null;
-            TrainRepairOrleans trainRepairOrleans = null;
-            if (!configuration.Batch)
-            {
-                trainRepair = new IncrementalTrainRepair();
-                trainRepairOrleans = new IncrementalTrainRepairOrleans();
-                tool = "NMF(Incremental)";
-            }
-            else
-            {
-                trainRepair = new BatchTrainRepair();
-                tool = "NMF(Batch)";
-            }
-            trainRepair.RepairTrains(railwayContainer, configuration.Query);
-            stopwatch.Stop();
-            Emit("read", i, 0, null);
+        //    TrainRepair trainRepair = null;
+        //    TrainRepairOrleans trainRepairOrleans = null;
+        //    if (!configuration.Batch)
+        //    {
+        //        trainRepair = new IncrementalTrainRepair();
+        //        trainRepairOrleans = new IncrementalTrainRepairOrleans();
+        //        tool = "NMF(Incremental)";
+        //    }
+        //    else
+        //    {
+        //        trainRepair = new BatchTrainRepair();
+        //        tool = "NMF(Batch)";
+        //    }
+        //    trainRepair.RepairTrains(railwayContainer, configuration.Query);
+        //    stopwatch.Stop();
+        //    Emit("read", i, 0, null);
 
-            // Check
-            stopwatch.Restart();
-            var actions = trainRepair.Check();
-            stopwatch.Stop();
-            Emit("check", i, 0, actions.Count());
+        //    // Check
+        //    stopwatch.Restart();
+        //    var actions = trainRepair.Check();
+        //    stopwatch.Stop();
+        //    Emit("check", i, 0, actions.Count());
 
-            if (!configuration.Inject)
-            {
-                var actionsSorted = (from pair in actions
-                                     orderby pair.Item1
-                                     select pair.Item2).ToList();
+        //    if (!configuration.Inject)
+        //    {
+        //        var actionsSorted = (from pair in actions
+        //            orderby pair.Item1
+        //            select pair.Item2).ToList();
 
-                for (int iter = 0; iter < configuration.IterationCount; iter++)
-                {
-                    // Repair
-                    if (fixedChangeSet)
-                    {
-                        stopwatch.Restart();
-                        trainRepair.RepairFixed(10, actionsSorted);
-                        stopwatch.Stop();
-                    }
-                    else
-                    {
-                        stopwatch.Restart();
-                        trainRepair.RepairProportional(10, actionsSorted);
-                        stopwatch.Stop();
-                    }
-                    Emit("repair", i, iter, null);
+        //        for (int iter = 0; iter < configuration.IterationCount; iter++)
+        //        {
+        //            // Repair
+        //            if (fixedChangeSet)
+        //            {
+        //                stopwatch.Restart();
+        //                trainRepair.RepairFixed(10, actionsSorted);
+        //                stopwatch.Stop();
+        //            }
+        //            else
+        //            {
+        //                stopwatch.Restart();
+        //                trainRepair.RepairProportional(10, actionsSorted);
+        //                stopwatch.Stop();
+        //            }
+        //            Emit("repair", i, iter, null);
 
-                    // ReCheck
-                    stopwatch.Restart();
-                    actions = trainRepair.Check();
-                    stopwatch.Stop();
-                    Emit("recheck", i, iter, actions.Count());
+        //            // ReCheck
+        //            stopwatch.Restart();
+        //            actions = trainRepair.Check();
+        //            stopwatch.Stop();
+        //            Emit("recheck", i, iter, actions.Count());
 
-                    actionsSorted = (from pair in actions
-                                     orderby pair.Item1
-                                     select pair.Item2).ToList();
-                }
-            }
-            else
-            {
-                var actionsSorted = (from pair in trainRepair.Inject()
-                                     orderby pair.Item1
-                                     select pair.Item2).ToList();
+        //            actionsSorted = (from pair in actions
+        //                orderby pair.Item1
+        //                select pair.Item2).ToList();
+        //        }
+        //    }
+        //    else
+        //    {
+        //        var actionsSorted = (from pair in trainRepair.Inject()
+        //            orderby pair.Item1
+        //            select pair.Item2).ToList();
 
-                for (int iter = 0; iter < configuration.IterationCount; iter++)
-                {
-                    // Repair
-                    if (fixedChangeSet)
-                    {
-                        stopwatch.Restart();
-                        trainRepair.RepairFixed(10, actionsSorted);
-                        stopwatch.Stop();
-                    }
-                    else
-                    {
-                        stopwatch.Restart();
-                        trainRepair.RepairProportional(10, actionsSorted);
-                        stopwatch.Stop();
-                    }
-                    Emit("inject", i, iter, null);
+        //        for (int iter = 0; iter < configuration.IterationCount; iter++)
+        //        {
+        //            // Repair
+        //            if (fixedChangeSet)
+        //            {
+        //                stopwatch.Restart();
+        //                trainRepair.RepairFixed(10, actionsSorted);
+        //                stopwatch.Stop();
+        //            }
+        //            else
+        //            {
+        //                stopwatch.Restart();
+        //                trainRepair.RepairProportional(10, actionsSorted);
+        //                stopwatch.Stop();
+        //            }
+        //            Emit("inject", i, iter, null);
 
-                    // ReCheck
-                    stopwatch.Restart();
-                    actions = trainRepair.Check();
-                    stopwatch.Stop();
-                    Emit("recheck", i, iter, actions.Count());
+        //            // ReCheck
+        //            stopwatch.Restart();
+        //            actions = trainRepair.Check();
+        //            stopwatch.Stop();
+        //            Emit("recheck", i, iter, actions.Count());
 
-                    actionsSorted = (from pair in trainRepair.Inject()
-                                     orderby pair.Item1
-                                     select pair.Item2).ToList();
-                }
-            }
-        }
+        //            actionsSorted = (from pair in trainRepair.Inject()
+        //                orderby pair.Item1
+        //                select pair.Item2).ToList();
+        //        }
+        //    }
+        //}
 
         private static void Emit(string phase, int runIdx, int iteration, int? elements)
         {
             const string format = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}";
 
-            Console.Out.WriteLine(format, configuration.ChangeSet, runIdx, tool, configuration.Size, configuration.Query, phase, iteration, "time", stopwatch.ElapsedTicks * 100);
-            Console.Out.WriteLine(format, configuration.ChangeSet, runIdx, tool, configuration.Size, configuration.Query, phase, iteration, "memory", Environment.WorkingSet);
+            Console.Out.WriteLine(format, configuration.ChangeSet, runIdx, tool, configuration.Size, configuration.Query, phase, iteration, "time",
+                stopwatch.ElapsedTicks*100);
+            Console.Out.WriteLine(format, configuration.ChangeSet, runIdx, tool, configuration.Size, configuration.Query, phase, iteration, "memory",
+                Environment.WorkingSet);
             if (elements != null)
             {
-                Console.Out.WriteLine(format, configuration.ChangeSet, runIdx, tool, configuration.Size, configuration.Query, phase, iteration, "rss", elements.Value);
+                Console.Out.WriteLine(format, configuration.ChangeSet, runIdx, tool, configuration.Size, configuration.Query, phase, iteration, "rss",
+                    elements.Value);
             }
         }
     }

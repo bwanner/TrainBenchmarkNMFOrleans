@@ -29,8 +29,5 @@ namespace TTC2015.TrainBenchmark
 
         [Option("batch", Required = false, HelpText = "Runs validation in batch mode")]
         public bool Batch { get; set; }
-
-        [Option("inject", Required = false, HelpText = "Runs the benchmark in inject mode")]
-        public bool Inject { get; set; }
     }
 }

@@ -9,6 +9,7 @@ using NMF.Expressions.Linq;
 using NMF.Expressions.Linq.Orleans;
 using NMF.Expressions.Linq.Orleans.Model;
 using NMF.Models.Tests.Railway;
+using NMF.Utilities;
 using Orleans;
 using Orleans.Streams;
 using Orleans.Streams.Endpoints;
@@ -22,64 +23,20 @@ namespace TTC2015.TrainBenchmark
         public QueryPattern InjectPattern { get; set; }
         public Random Random { get; set; }
 
-        protected IModelContainerGrain<RailwayContainer> ModelContainerGrain { get; private set; }
+        protected IModelContainerGrain<Model> ModelContainerGrain { get; private set; }
 
-        public async Task RepairTrains(IModelContainerGrain<RailwayContainer> modelContainerGrain, string task, IGrainFactory grainFactory)
+        public async Task RepairTrains(IModelContainerGrain<Model> modelContainerGrain, string task, IGrainFactory grainFactory)
         {
             ModelContainerGrain = modelContainerGrain;
             var factory = new IncrementalNmfModelStreamProcessorAggregateFactory(grainFactory, modelContainerGrain);
             Random = new Random(0);
-            //if (task == "ConnectedSegments")
-            //{
-            //    Fix(pattern: from sensor in rc.Descendants().OfType<Sensor>()
-            //                 from segment1 in sensor.Elements.OfType<Segment>()
-            //                 from segment2 in segment1.ConnectsTo.OfType<Segment>()
-            //                 from segment3 in segment2.ConnectsTo.OfType<Segment>()
-            //                 from segment4 in segment3.ConnectsTo.OfType<Segment>()
-            //                 from segment5 in segment4.ConnectsTo.OfType<Segment>()
-            //                 from segment6 in segment5.ConnectsTo.OfType<Segment>()
-            //                 where segment6.Sensor == sensor && segment1 != segment2 && segment1 != segment3 && segment1 != segment3 && segment1 != segment4 && segment1 != segment5 && segment1 != segment6
-            //                    && segment2 != segment3 && segment2 != segment4 && segment2 != segment5 && segment2 != segment6 && segment3 != segment4 && segment3 != segment5 && segment3 != segment6
-            //                    && segment4 != segment5 && segment4 != segment6 && segment5 != segment6
-            //                 select new { Sensor = sensor, Segment1 = segment1, Segment2 = segment2, Segment3 = segment3, Segment4 = segment4, Segment5 = segment5, Segment6 = segment6 },
-            //         action: match =>
-            //         {
-            //             match.Segment1.ConnectsTo.Remove(match.Segment2);
-            //             match.Segment2.Sensor = null;
-            //             match.Segment1.ConnectsTo.Add(match.Segment3);
-            //         },
-            //         sortKey: match => string.Format("<sensor: {0:0000}, seg1: {1:0000}, seg2: {2:0000}, seg3: {3:0000}, seg4: {4:0000}, seg5: {5:0000}, seg6: {6:0000}>",
-            //             match.Sensor.Id.GetValueOrDefault(),
-            //             match.Segment1.Id.GetValueOrDefault(),
-            //             match.Segment2.Id.GetValueOrDefault(),
-            //             match.Segment3.Id.GetValueOrDefault(),
-            //             match.Segment4.Id.GetValueOrDefault(),
-            //             match.Segment5.Id.GetValueOrDefault(),
-            //             match.Segment6.Id.GetValueOrDefault()));
-
-            //    Inject(pattern: from sensor in rc.Descendants().OfType<Sensor>()
-            //                    from segment1 in sensor.Elements.OfType<Segment>()
-            //                    from segment3 in segment1.ConnectsTo.OfType<Segment>()
-            //                    where segment1 != segment3
-            //                    select new { Sensor = sensor, Segment1 = segment1, Segment3 = segment3 },
-            //           action: match =>
-            //           {
-            //               var newSegment = new Segment();
-            //               newSegment.Length = 1;
-            //               newSegment.Sensor = match.Segment1.Sensor;
-            //               newSegment.ConnectsTo.Add(match.Segment3);
-            //               match.Segment1.ConnectsTo.Remove(match.Segment3);
-            //               match.Segment1.ConnectsTo.Add(newSegment);
-            //           },
-            //           sortKey: match => string.Format("<sensor: {0:0000}, seg1: {1:0000}, seg3: {2:0000}>", match.Sensor.Id.GetValueOrDefault(), match.Segment1.Id.GetValueOrDefault(),
-            //               match.Segment3.Id.GetValueOrDefault()));
-            //}            
+          
             if (task == "PosLength")
             {
                 await Fix(
                     modelPattern:
                         await
-                            modelContainerGrain.SimpleSelectMany(model => model.Descendants().OfType<ISegment>(), factory)
+                            modelContainerGrain.SimpleSelectMany(model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<ISegment>(), factory)
                                 .Where(seg => seg.Length < 0)
                                 .ToNmfModelConsumer(),
                     action: seg => modelContainerGrain.ExecuteSync((container, elementUri) =>
@@ -105,40 +62,56 @@ namespace TTC2015.TrainBenchmark
                 var query =
                     await
                         modelContainerGrain.SimpleSelectMany(
-                            model => model.Descendants().OfType<ISwitch>(), factory);
+                            model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<ISwitch>(), factory);
 
                 var query2 = await query.Where(sw => sw.Sensor == null);
                 var query3 = await query2.ToNmfModelConsumer();
 
-                Console.WriteLine("dasoo");
                 await Fix(modelPattern: query3,
                     action: sw => modelContainerGrain.ExecuteSync((container, elementUri) =>
                     {
                         var swi = (ISwitch) container.Resolve((Uri) elementUri);
                         swi.Sensor = new Sensor();
-                    }, sw.RelativeUri),
+                        Console.WriteLine("SensorID: {0}", swi.Sensor.RelativeUri);
+                    }, sw.RelativeUri, true),
                     sortKey: sw => string.Format("<sw : {0:0000}>", sw.Id.GetValueOrDefault()));
-
-                //Inject(pattern: rc.Descendants().OfType<Switch>().Where(sw => sw.Sensor != null),
-                //    action: sw => sw.Sensor = null,
-                //    sortKey: sw => string.Format("<sw : {0:0000}>", sw.Id.GetValueOrDefault()));
+;
             }
-            //        if (task == "SwitchSet")
-            //        {
-            //            // SwitchSet
-            //            Fix(pattern: from route in routes
-            //                         where route.Entry != null && route.Entry.Signal == Signal.GO
-            //                         from swP in route.Follows.OfType<SwitchPosition>()
-            //                         where swP.Switch.CurrentPosition != swP.Position
-            //                         select swP,
-            //                 action: swP => swP.Switch.CurrentPosition = swP.Position,
-            //                 sortKey: swP => string.Format("<semaphore : {0:0000}, route : {1:0000}, swP : {2:0000}, sw : {3:0000}>", swP.Route.Entry.Id.GetValueOrDefault(),
-            //                     swP.Route.Id.GetValueOrDefault(), swP.Id.GetValueOrDefault(), swP.Switch.Id.GetValueOrDefault()));
+            if (task == "SwitchSet")
+            {
+                await
+                    Fix(
+                        modelPattern:
+                            await
+                                modelContainerGrain.SimpleSelectMany(
+                                    model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<IRoute>(), factory)
+                                    .Where(route => route.Entry != null && route.Entry.Signal == Signal.GO)
+                                    .SimpleSelectMany(route => route.Follows.OfType<ISwitchPosition>())
+                                    .Where(swp => swp.Switch.CurrentPosition != swp.Position)
+                                    .ToNmfModelConsumer(),
+                        action: swp => modelContainerGrain.ExecuteSync((model, elementUri) =>
+                        {
+                            var localSwp = (ISwitchPosition) model.Resolve((Uri) elementUri);
+                            localSwp.Switch.CurrentPosition = localSwp.Position;
+                        }, swp.RelativeUri),
+                        sortKey:
+                            swP =>
+                                string.Format("<semaphore : {0:0000}, route : {1:0000}, swP : {2:0000}, sw : {3:0000}>",
+                                    swP.Route.Entry.Id.GetValueOrDefault(),
+                                    swP.Route.Id.GetValueOrDefault(), swP.Id.GetValueOrDefault(), swP.Switch.Id.GetValueOrDefault())
+                        );
 
-            //            Inject(pattern: rc.Descendants().OfType<Switch>(),
-            //                action: sw => sw.CurrentPosition = ((Position)(((int)sw.CurrentPosition + 1) % 4)),
-            //                sortKey: sw => string.Format("<switch: {0:0000}>", sw.Id.GetValueOrDefault()));
-            //        }
+                // SwitchSet
+                //Fix(pattern: from route in routes
+                //             where route.Entry != null && route.Entry.Signal == Signal.GO
+                //             from swP in route.Follows.OfType<SwitchPosition>()
+                //             where swP.Switch.CurrentPosition != swP.Position
+                //             select swP,
+                //     action: swP => swP.Switch.CurrentPosition = swP.Position,
+                //     sortKey: swP => string.Format("<semaphore : {0:0000}, route : {1:0000}, swP : {2:0000}, sw : {3:0000}>", swP.Route.Entry.Id.GetValueOrDefault(),
+                //         swP.Route.Id.GetValueOrDefault(), swP.Id.GetValueOrDefault(), swP.Switch.Id.GetValueOrDefault()));
+
+            }
             //        if (task == "RouteSensor")
             //        {
             //            // RouteSensor
@@ -259,7 +232,7 @@ namespace TTC2015.TrainBenchmark
     {
         private class QueryPattern<T> : QueryPattern
         {
-            public IModelContainerGrain<RailwayContainer> Source { get; set; }
+            public IModelContainerGrain<Model> Source { get; set; }
             public MultiStreamListConsumer<T> ResultConsumer { get; set; }
             public Func<T, string> SortKey { get; set; }
             public Func<T, Task> Action { get; set; }
