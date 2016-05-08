@@ -30,13 +30,14 @@ namespace TTC2015.TrainBenchmark
             ModelContainerGrain = modelContainerGrain;
             var factory = new IncrementalNmfModelStreamProcessorAggregateFactory(grainFactory, modelContainerGrain);
             Random = new Random(0);
-          
+
             if (task == "PosLength")
             {
                 await Fix(
                     modelPattern:
                         await
-                            modelContainerGrain.SimpleSelectMany(model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<ISegment>(), factory)
+                            modelContainerGrain.SimpleSelectMany(
+                                model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<ISegment>(), factory)
                                 .Where(seg => seg.Length < 0)
                                 .ToNmfModelConsumer(),
                     action: seg => modelContainerGrain.ExecuteSync((container, elementUri) =>
@@ -75,7 +76,7 @@ namespace TTC2015.TrainBenchmark
                         Console.WriteLine("SensorID: {0}", swi.Sensor.RelativeUri);
                     }, sw.RelativeUri, true),
                     sortKey: sw => string.Format("<sw : {0:0000}>", sw.Id.GetValueOrDefault()));
-;
+                ;
             }
             if (task == "SwitchSet")
             {
@@ -114,29 +115,33 @@ namespace TTC2015.TrainBenchmark
                 //     action: swP => swP.Switch.CurrentPosition = swP.Position,
                 //     sortKey: swP => string.Format("<semaphore : {0:0000}, route : {1:0000}, swP : {2:0000}, sw : {3:0000}>", swP.Route.Entry.Id.GetValueOrDefault(),
                 //         swP.Route.Id.GetValueOrDefault(), swP.Id.GetValueOrDefault(), swP.Switch.Id.GetValueOrDefault()));
-
             }
             if (task == "RouteSensor")
             {
-                var query = await modelContainerGrain.SimpleSelectMany(model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<IRoute>(), factory)
-                    .SelectMany(route => route.Follows.OfType<ISwitchPosition>(),
-                        (route, position) => new ModelElementTuple<IRoute, ISwitchPosition>(route, position))
-                    .Where(tuple => tuple.Item2.Switch.Sensor != null && !tuple.Item1.DefinedBy.Contains(tuple.Item2.Switch.Sensor))
-                    .ToNmfModelConsumer();
+                var query =
+                    await
+                        modelContainerGrain.SimpleSelectMany(
+                            model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<IRoute>(), factory)
+                            .SelectMany(route => route.Follows.OfType<ISwitchPosition>(),
+                                (route, position) => new ModelElementTuple<IRoute, ISwitchPosition>(route, position))
+                            .Where(tuple => tuple.Item2.Switch.Sensor != null && !tuple.Item1.DefinedBy.Contains(tuple.Item2.Switch.Sensor))
+                            .ToNmfModelConsumer();
 
                 await Fix(modelPattern: query,
-                    action: async match => await modelContainerGrain.ExecuteSync(model =>
+                    action: async match => await modelContainerGrain.ExecuteSync((model, mat) =>
                     {
-                        var localRoute = (IRoute) model.Resolve(match.Item1.RelativeUri);
-                        var localSensor = (ISensor) model.Resolve(match.Item2.Switch.Sensor.RelativeUri);
+                        var localMatch = (Tuple<Uri, Uri>) mat;
+                        var localRoute = (IRoute) model.Resolve(localMatch.Item1);
+                        var localSwitch = (ISwitch) model.Resolve(localMatch.Item2);
+                        var localSensor = (ISensor) model.Resolve(localSwitch.Sensor.RelativeUri);
                         localRoute.DefinedBy.Add(localSensor);
-                    }),
+                    }, new Tuple<Uri, Uri>(match.Item1.RelativeUri, match.Item2.RelativeUri)),
                     sortKey: match => string.Format("<route : {0:0000}, sensor : {1:0000}, swP : {2:0000}, sw : {3:0000}>",
                         match.Item1.Id.GetValueOrDefault(),
                         match.Item2.Switch.Sensor.Id.GetValueOrDefault(),
                         match.Item2.Id.GetValueOrDefault(),
                         match.Item2.Switch.Id.GetValueOrDefault())
-                );
+                    );
 
                 // RouteSensor
                 //Fix(pattern: from route in routes
@@ -152,8 +157,49 @@ namespace TTC2015.TrainBenchmark
             }
             if (task == "SemaphoreNeighbor")
             {
-                //var query = modelContainerGrain.SimpleSelectMany(model => model.RootElements.Single().As<RailwayContainer>().Routes, factory)
-                //    .SelectMany(route => )
+                var query = await modelContainerGrain.SelectMany(
+                    model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<IRoute>(),
+                    (model, route) => new ModelElementTuple<Model, IRoute>(model, route), factory)
+                    .SelectMany(tuple => tuple.Item1.RootElements.Single().As<RailwayContainer>().Descendants().OfType<IRoute>(),
+                        (tuple, route) => new ModelElementTuple<IRoute, IRoute>(tuple.Item2, route))
+                    .Where(tuple => tuple.Item1 != tuple.Item2 && tuple.Item2.Entry != tuple.Item1.Exit)
+                    .SelectMany(tuple => tuple.Item1.DefinedBy,
+                        (tuple, sensor) => new ModelElementTuple<IRoute, IRoute, ISensor>(tuple.Item1, tuple.Item2, sensor))
+                    .SelectMany(tuple => tuple.Item3.Elements,
+                        (tuple, element) =>
+                            new ModelElementTuple<IRoute, IRoute, ISensor, ITrackElement>(tuple.Item1, tuple.Item2, tuple.Item3, element))
+                    .SelectMany(tuple => tuple.Item4.ConnectsTo,
+                        (tuple, element) =>
+                            new ModelElementTuple<IRoute, IRoute, ISensor, ITrackElement, ITrackElement>(tuple.Item1, tuple.Item2, tuple.Item3,
+                                tuple.Item4, element))
+                    .Where(tuple => tuple.Item5.Sensor == null || tuple.Item2.DefinedBy.Contains(tuple.Item5.Sensor))
+                    .Select(
+                        tuple =>
+                            new ModelElementTuple<IRoute, IRoute, ITrackElement, ITrackElement>(tuple.Item1, tuple.Item2, tuple.Item4, tuple.Item5))
+                    .ToNmfModelConsumer();
+
+                await Fix(modelPattern: query,
+                    action: async match => await modelContainerGrain.ExecuteSync((model, mat) =>
+                    {
+                        var localMatch = (Tuple<Uri, Uri>) mat;
+                        var localRoute1 = (IRoute) model.Resolve(localMatch.Item1);
+                        var localRoute2 = (IRoute) model.Resolve(localMatch.Item2);
+
+                        localRoute2.Entry = localRoute1.Exit;
+                    }, new Tuple<Uri, Uri>(match.Item1.RelativeUri, match.Item2.RelativeUri)),
+                    sortKey:
+                        match =>
+                            string.Format(
+                                "<semaphore : {0:0000}, route1 : {1:0000}, route2 : {2:0000}, sensor1 : {3:0000}, sensor2 : {4:0000}, te1 : {5:0000}, te2 : {6:0000}>",
+                                match.Item1.Exit.Id.GetValueOrDefault(),
+                                match.Item1.Id.GetValueOrDefault(),
+                                match.Item2.Id.GetValueOrDefault(),
+                                match.Item3.Sensor.Id.GetValueOrDefault(),
+                                match.Item4.Sensor != null
+                                    ? match.Item4.Sensor.Id.GetValueOrDefault()
+                                    : 0,
+                                match.Item3.Id.GetValueOrDefault(),
+                                match.Item4.Id.GetValueOrDefault()));
 
                 //            // SemaphoreNeighbor
                 //Fix(pattern: from route1 in routes
@@ -174,7 +220,6 @@ namespace TTC2015.TrainBenchmark
                 //			match.Te2.Sensor.Id.GetValueOrDefault() : 0,
                 //                    match.Te1.Id.GetValueOrDefault(),
                 //			match.Te2.Id.GetValueOrDefault()));
-
             }
         }
 
@@ -200,7 +245,8 @@ namespace TTC2015.TrainBenchmark
             }
         }
 
-        protected abstract Task Fix<T, TModel>(TransactionalStreamModelConsumer<T, TModel> modelPattern, Func<T, Task> action, Func<T, string> sortKey) where TModel : IResolvableModel;
+        protected abstract Task Fix<T, TModel>(TransactionalStreamModelConsumer<T, TModel> modelPattern, Func<T, Task> action, Func<T, string> sortKey)
+            where TModel : IResolvableModel;
 
         public async Task<IEnumerable<Tuple<string, Func<Task>>>> Check()
         {
@@ -257,7 +303,7 @@ namespace TTC2015.TrainBenchmark
 
             public override async Task<IEnumerable<Tuple<string, Func<Task>>>> GetAvailableActions()
             {
-                if(_firstCheckCall) 
+                if (_firstCheckCall)
                     await Source.EnumerateToSubscribers();
 
                 _firstCheckCall = false;
@@ -273,9 +319,16 @@ namespace TTC2015.TrainBenchmark
             }
         }
 
-        protected override Task Fix<T, TModel>(TransactionalStreamModelConsumer<T, TModel> resultConsumer, Func<T, Task> action, Func<T, string> sortKey)
+        protected override Task Fix<T, TModel>(TransactionalStreamModelConsumer<T, TModel> resultConsumer, Func<T, Task> action,
+            Func<T, string> sortKey)
         {
-            Pattern = new QueryPattern<T, TModel>() {Source = ModelContainerGrain, ResultConsumer = resultConsumer, Action = action, SortKey = sortKey};
+            Pattern = new QueryPattern<T, TModel>()
+            {
+                Source = ModelContainerGrain,
+                ResultConsumer = resultConsumer,
+                Action = action,
+                SortKey = sortKey
+            };
             return TaskDone.Done;
         }
     }
