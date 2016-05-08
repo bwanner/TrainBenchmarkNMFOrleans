@@ -79,6 +79,10 @@ namespace TTC2015.TrainBenchmark
             }
             if (task == "SwitchSet")
             {
+                //await modelContainerGrain.SimpleSelectMany(
+                //    model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<IRoute>(), factory)
+                //    .Select(route => new {X = route.Exit, Y = route.Entry}).ToNmfModelConsumer();
+
                 await
                     Fix(
                         modelPattern:
@@ -112,52 +116,66 @@ namespace TTC2015.TrainBenchmark
                 //         swP.Route.Id.GetValueOrDefault(), swP.Id.GetValueOrDefault(), swP.Switch.Id.GetValueOrDefault()));
 
             }
-            //        if (task == "RouteSensor")
-            //        {
-            //            // RouteSensor
-            //            Fix(pattern: from route in routes
-            //                         from swP in route.Follows.OfType<SwitchPosition>()
-            //                         where swP.Switch.Sensor != null && !route.DefinedBy.Contains(swP.Switch.Sensor)
-            //                         select new { Route = route, Sensor = swP.Switch.Sensor, SwitchPos = swP },
-            //                 action: match => match.Route.DefinedBy.Add(match.Sensor),
-            //                 sortKey: match => string.Format("<route : {0:0000}, sensor : {1:0000}, swP : {2:0000}, sw : {3:0000}>",
-            //                     match.Route.Id.GetValueOrDefault(),
-            //                     match.Sensor.Id.GetValueOrDefault(),
-            //                     match.SwitchPos.Id.GetValueOrDefault(),
-            //                     match.SwitchPos.Switch.Id.GetValueOrDefault()));
+            if (task == "RouteSensor")
+            {
+                var query = await modelContainerGrain.SimpleSelectMany(model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<IRoute>(), factory)
+                    .SelectMany(route => route.Follows.OfType<ISwitchPosition>(),
+                        (route, position) => new ModelElementTuple<IRoute, ISwitchPosition>(route, position))
+                    .Where(tuple => tuple.Item2.Switch.Sensor != null && !tuple.Item1.DefinedBy.Contains(tuple.Item2.Switch.Sensor))
+                    .ToNmfModelConsumer();
 
-            //            Inject(pattern: rc.Descendants().OfType<Switch>(),
-            //                action: sw => sw.Sensor = null,
-            //                sortKey: sw => string.Format("<switch: {0:0000}>", sw.Id.GetValueOrDefault()));
-            //        }
-            //        if (task == "SemaphoreNeighbor")
-            //        {
-            //            // SemaphoreNeighbor
-            //Fix(pattern: from route1 in routes
-            //                         from route2 in routes
-            //	         where route1 != route2 && route2.Entry != route1.Exit
-            //                         from sensor1 in route1.DefinedBy
-            //                         from te1 in sensor1.Elements
-            //                         from te2 in te1.ConnectsTo
-            //                         where te2.Sensor == null || route2.DefinedBy.Contains(te2.Sensor)
-            //	select new { Route1 = route1, Route2 = route2, Te1 = te1, Te2 = te2 },
-            //	action: match => match.Route2.Entry = match.Route1.Exit,
-            //	sortKey: match => string.Format("<semaphore : {0:0000}, route1 : {1:0000}, route2 : {2:0000}, sensor1 : {3:0000}, sensor2 : {4:0000}, te1 : {5:0000}, te2 : {6:0000}>",
-            //		match.Route1.Exit.Id.GetValueOrDefault(),
-            //		match.Route1.Id.GetValueOrDefault(),
-            //                    match.Route2.Id.GetValueOrDefault(),
-            //                    match.Te1.Sensor.Id.GetValueOrDefault(),
-            //		match.Te2.Sensor != null ?
-            //			match.Te2.Sensor.Id.GetValueOrDefault() : 0,
-            //                    match.Te1.Id.GetValueOrDefault(),
-            //			match.Te2.Id.GetValueOrDefault()));
+                await Fix(modelPattern: query,
+                    action: async match => await modelContainerGrain.ExecuteSync(model =>
+                    {
+                        var localRoute = (IRoute) model.Resolve(match.Item1.RelativeUri);
+                        var localSensor = (ISensor) model.Resolve(match.Item2.Switch.Sensor.RelativeUri);
+                        localRoute.DefinedBy.Add(localSensor);
+                    }),
+                    sortKey: match => string.Format("<route : {0:0000}, sensor : {1:0000}, swP : {2:0000}, sw : {3:0000}>",
+                        match.Item1.Id.GetValueOrDefault(),
+                        match.Item2.Switch.Sensor.Id.GetValueOrDefault(),
+                        match.Item2.Id.GetValueOrDefault(),
+                        match.Item2.Switch.Id.GetValueOrDefault())
+                );
 
-            //            Inject(pattern: from route in routes
-            //                            where route.Entry != null
-            //                            select route,
-            //                   action: route => route.Entry = null,
-            //                   sortKey: route => string.Format("<semaphore: {0:0000}, route: {1:0000}>", route.Entry.Id.GetValueOrDefault(), route.Id.GetValueOrDefault()));
-            //        }
+                // RouteSensor
+                //Fix(pattern: from route in routes
+                //             from swP in route.Follows.OfType<SwitchPosition>()
+                //             where swP.Switch.Sensor != null && !route.DefinedBy.Contains(swP.Switch.Sensor)
+                //             select new { Route = route, Sensor = swP.Switch.Sensor, SwitchPos = swP },
+                //     action: match => match.Route.DefinedBy.Add(match.Sensor),
+                //     sortKey: match => string.Format("<route : {0:0000}, sensor : {1:0000}, swP : {2:0000}, sw : {3:0000}>",
+                //         match.Route.Id.GetValueOrDefault(),
+                //         match.Sensor.Id.GetValueOrDefault(),
+                //         match.SwitchPos.Id.GetValueOrDefault(),
+                //         match.SwitchPos.Switch.Id.GetValueOrDefault()));
+            }
+            if (task == "SemaphoreNeighbor")
+            {
+                //var query = modelContainerGrain.SimpleSelectMany(model => model.RootElements.Single().As<RailwayContainer>().Routes, factory)
+                //    .SelectMany(route => )
+
+                //            // SemaphoreNeighbor
+                //Fix(pattern: from route1 in routes
+                //                         from route2 in routes
+                //	         where route1 != route2 && route2.Entry != route1.Exit
+                //                         from sensor1 in route1.DefinedBy
+                //                         from te1 in sensor1.Elements
+                //                         from te2 in te1.ConnectsTo
+                //                         where te2.Sensor == null || route2.DefinedBy.Contains(te2.Sensor)
+                //	select new { Route1 = route1, Route2 = route2, Te1 = te1, Te2 = te2 },
+                //	action: match => match.Route2.Entry = match.Route1.Exit,
+                //	sortKey: match => string.Format("<semaphore : {0:0000}, route1 : {1:0000}, route2 : {2:0000}, sensor1 : {3:0000}, sensor2 : {4:0000}, te1 : {5:0000}, te2 : {6:0000}>",
+                //		match.Route1.Exit.Id.GetValueOrDefault(),
+                //		match.Route1.Id.GetValueOrDefault(),
+                //                    match.Route2.Id.GetValueOrDefault(),
+                //                    match.Te1.Sensor.Id.GetValueOrDefault(),
+                //		match.Te2.Sensor != null ?
+                //			match.Te2.Sensor.Id.GetValueOrDefault() : 0,
+                //                    match.Te1.Id.GetValueOrDefault(),
+                //			match.Te2.Id.GetValueOrDefault()));
+
+            }
         }
 
         protected void CompareMatches<T>(IEnumerableExpression<T> pattern, IEnumerable<T> cmpResult, Func<T, string> sortKey, Func<T, T, bool> cmpFunc)
@@ -182,9 +200,7 @@ namespace TTC2015.TrainBenchmark
             }
         }
 
-        protected abstract Task Fix<T>(MultiStreamListConsumer<T> modelPattern, Func<T, Task> action, Func<T, string> sortKey);
-
-        protected abstract Task Inject<T>(MultiStreamListConsumer<T> pattern, Func<T, Task> action, Func<T, string> sortKey);
+        protected abstract Task Fix<T, TModel>(TransactionalStreamModelConsumer<T, TModel> modelPattern, Func<T, Task> action, Func<T, string> sortKey) where TModel : IResolvableModel;
 
         public async Task<IEnumerable<Tuple<string, Func<Task>>>> Check()
         {
@@ -230,10 +246,10 @@ namespace TTC2015.TrainBenchmark
 
     class IncrementalTrainRepairOrleans : TrainRepairOrleans
     {
-        private class QueryPattern<T> : QueryPattern
+        private class QueryPattern<T, TModel> : QueryPattern where TModel : IResolvableModel
         {
             public IModelContainerGrain<Model> Source { get; set; }
-            public MultiStreamListConsumer<T> ResultConsumer { get; set; }
+            public TransactionalStreamModelConsumer<T, TModel> ResultConsumer { get; set; }
             public Func<T, string> SortKey { get; set; }
             public Func<T, Task> Action { get; set; }
 
@@ -257,17 +273,10 @@ namespace TTC2015.TrainBenchmark
             }
         }
 
-        protected override Task Fix<T>(MultiStreamListConsumer<T> resultConsumer, Func<T, Task> action, Func<T, string> sortKey)
+        protected override Task Fix<T, TModel>(TransactionalStreamModelConsumer<T, TModel> resultConsumer, Func<T, Task> action, Func<T, string> sortKey)
         {
-            Pattern = new QueryPattern<T>() {Source = ModelContainerGrain, ResultConsumer = resultConsumer, Action = action, SortKey = sortKey};
+            Pattern = new QueryPattern<T, TModel>() {Source = ModelContainerGrain, ResultConsumer = resultConsumer, Action = action, SortKey = sortKey};
             return TaskDone.Done;
-        }
-
-        protected override Task Inject<T>(MultiStreamListConsumer<T> resultConsumer, Func<T, Task> action, Func<T, string> sortKey)
-        {
-            Pattern = new QueryPattern<T>() { Source = ModelContainerGrain, ResultConsumer = resultConsumer, Action = action, SortKey = sortKey };
-            return TaskDone.Done;
-            //InjectPattern = new BatchTrainRepair.QueryPattern<T>() { Source = pattern, Action = action, SortKey = sortKey };
         }
     }
 
