@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using BenchmarkLibrary;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Diagnostics;
 using Microsoft.WindowsAzure.ServiceRuntime;
@@ -52,6 +54,13 @@ namespace SiloRole
             // see the MSDN topic at http://go.microsoft.com/fwlink/?LinkId=166357.
 
             bool result = base.OnStart();
+
+            if (!RoleEnvironment.IsEmulated)
+            {
+                var modelPath = RoleEnvironment.GetLocalResource("ModelStorage").RootPath;
+                BenchmarkSetup.SetupOnAzure(modelPath + "\\", RoleEnvironment.GetConfigurationSettingValue("Smb_Path"), RoleEnvironment.GetConfigurationSettingValue("Smb_User"),
+                    RoleEnvironment.GetConfigurationSettingValue("Smb_Password"));
+            }
 
             Trace.TraceInformation("SiloRole has been started");
 

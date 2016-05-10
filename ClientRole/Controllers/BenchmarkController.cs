@@ -3,6 +3,7 @@ using Orleans.Runtime.Configuration;
 using Orleans.Runtime.Host;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -12,6 +13,7 @@ using System.Web.Http;
 using System.Web.Http.Results;
 using BenchmarkLibrary;
 using ClientRole;
+using Microsoft.WindowsAzure.ServiceRuntime;
 using NMF.Expressions.Linq.Orleans.Model;
 using Orleans.Streams;
 
@@ -22,7 +24,7 @@ namespace WebRole.Controllers
     public class BenchmarkController : ApiController
     {
         // GET: api/Benchmark
-        public async Task<IEnumerable<string>> Get()
+        public async Task<JsonResult<List<BenchmarkRunResult>>> Post([FromBody] BenchmarkSettings settings)
         {
             //var path = HostingEnvironment.MapPath("~/ClientConfiguration.xml");
             //var config = ClientConfiguration.LoadFromFile(path);
@@ -33,25 +35,31 @@ namespace WebRole.Controllers
             //    GrainClient.SetResponseTimeout(TimeSpan.FromSeconds(30));
             //}
 
+            List<BenchmarkRunResult> results;
+            //if (!RoleEnvironment.IsEmulated)
+            //{
+            //    results = await BenchmarkExecutor.ExecuteBenchmark(settings, HostingEnvironment.MapPath("~/"), "z:\\");
+            //}
+            //else
+            //{
 
-            var friend = GrainClient.GrainFactory.GetGrain<IModelContainerGrain<NMF.Models.Model>>(Guid.NewGuid());
-
-            var settings = new BenchmarkSettings()
+            var modelPath = HostingEnvironment.MapPath("~/railway-models/");
+            if (!RoleEnvironment.IsEmulated)
             {
-                ChangeSet = "10",
-                Description = "Test",
-                IterationCount = 10,
-                Query = "PosLength",
-                Runs = 1,
-                RunType = ExecutionType.Orleans,
-                Size = 2,
-                ValidateAgainstTable = true
-            };
+                //modelPath = RoleEnvironment.GetLocalResource("ModelStorage").RootPath + "\\";
+                modelPath = "z:\\";
+            }
 
-            await BenchmarkExecutor.ExecuteBenchmark(settings, HostingEnvironment.MapPath("~/"));
+            results = await BenchmarkExecutor.ExecuteBenchmark(settings, HostingEnvironment.MapPath("~/"), modelPath);
+            //}
 
-            return "foobar".SingleValueToList();
 
+            return Json(results);
+        }
+
+        public Task<IEnumerable<string>> Get()
+        {
+            return Task.FromResult(Directory.EnumerateFiles("Z:\\"));
         }
 
         // POST: api/Benchmark
