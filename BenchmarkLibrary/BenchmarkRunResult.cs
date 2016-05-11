@@ -7,6 +7,7 @@ namespace BenchmarkLibrary
 {
     public class BenchmarkRunResult
     {
+        public BenchmarkSettings Settings;
         public List<ExecutionInformation> Runs;
     }
 
@@ -23,6 +24,7 @@ namespace BenchmarkLibrary
         Read,
         Check,
         Repair,
-        Recheck
+        Recheck,
+        ValidateFailed
     }
 }

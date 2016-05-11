@@ -20,7 +20,7 @@ namespace BenchmarkLibrary
             var runs = new List<BenchmarkRunResult>();
             for (int i = 0; i < settings.Runs; i++)
             {
-                var run = new BenchmarkRunResult();
+                var run = new BenchmarkRunResult {Settings = settings};
                 if (settings.RunType == ExecutionType.Orleans)
                     run.Runs = await ExecuteRunOrleans(settings, rootPath, modelRootPath);
                 else
@@ -45,7 +45,7 @@ namespace BenchmarkLibrary
             TrainRepairOrleans trainRepairOrleans = new IncrementalTrainRepairOrleans();
             var modelContainer = GrainClient.GrainFactory.GetGrain<IModelContainerGrain<Model>>(Guid.NewGuid());
             await modelContainer.LoadModelFromPath(modelPath);
-            await trainRepairOrleans.RepairTrains(modelContainer, settings.Query, GrainClient.GrainFactory);
+            await trainRepairOrleans.RepairTrains(modelContainer, settings.Query, GrainClient.GrainFactory, settings.ScatterFactors);
 
             stopwatch.Stop();
             executionList.Add(new ExecutionInformation()
@@ -69,7 +69,7 @@ namespace BenchmarkLibrary
 
             var orleansElements = actions.Select(x => x.Item1).OrderBy(s => s).ToList();
             if (orleansElements.Count != expectedNumberOfActions)
-                throw new InvalidOperationException();
+                executionList.Add(new ExecutionInformation() { Action = BenchmarkAction.ValidateFailed, ElapsedMilliseconds = 0, Iteration = 0 });
 
             var actionsSorted = (from pair in actions
                 orderby pair.Item1
@@ -108,7 +108,7 @@ namespace BenchmarkLibrary
 
                 orleansElements = actions.Select(x => x.Item1).OrderBy(s => s).ToList();
                 if (orleansElements.Count != LoadExpectedResults(iter + 1, settings, rootFolder))
-                    throw new InvalidOperationException();
+                    executionList.Add(new ExecutionInformation() { Action = BenchmarkAction.ValidateFailed, ElapsedMilliseconds = 0, Iteration = iter + 1 });
 
 
                 actionsSorted = (from pair in actions
@@ -167,7 +167,7 @@ namespace BenchmarkLibrary
                 select pair.Item2).ToList();
 
             if (actionsSorted.Count != expectedNumberOfActions)
-                throw new InvalidOperationException();
+                executionList.Add(new ExecutionInformation() { Action = BenchmarkAction.ValidateFailed, ElapsedMilliseconds = 0, Iteration = 0});
 
             for (int iter = 0; iter < settings.IterationCount; iter++)
             {
@@ -207,7 +207,7 @@ namespace BenchmarkLibrary
                     select pair.Item2).ToList();
 
                 if (actionsSorted.Count != LoadExpectedResults(iter + 1, settings, rootFolder))
-                    throw new InvalidOperationException();
+                    executionList.Add(new ExecutionInformation() { Action = BenchmarkAction.ValidateFailed, ElapsedMilliseconds = 0, Iteration = iter });
             }
 
             return Task.FromResult(executionList);

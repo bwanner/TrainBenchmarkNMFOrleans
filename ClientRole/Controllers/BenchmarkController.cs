@@ -36,12 +36,7 @@ namespace WebRole.Controllers
             //}
 
             List<BenchmarkRunResult> results;
-            //if (!RoleEnvironment.IsEmulated)
-            //{
-            //    results = await BenchmarkExecutor.ExecuteBenchmark(settings, HostingEnvironment.MapPath("~/"), "z:\\");
-            //}
-            //else
-            //{
+
 
             var modelPath = HostingEnvironment.MapPath("~/railway-models/");
             if (!RoleEnvironment.IsEmulated)
@@ -51,8 +46,6 @@ namespace WebRole.Controllers
             }
 
             results = await BenchmarkExecutor.ExecuteBenchmark(settings, HostingEnvironment.MapPath("~/"), modelPath);
-            //}
-
 
             return Json(results);
         }
