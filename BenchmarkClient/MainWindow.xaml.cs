@@ -45,6 +45,8 @@ namespace BenchmarkClient
             var fileContents = File.ReadAllText(FileTextBlock.Text);
             var jsonContents = JsonConvert.DeserializeObject<List<BenchmarkSettings>>(fileContents);
             var url = HostUrlTextBlock.Text;
+            failureCount.Content = 0;
+            ResponseTextBox.Clear();
             //url = "http://0f3ba8f5f87d4dde91df72b249e36ca5.cloudapp.net/api/benchmark";
             
 
@@ -62,6 +64,9 @@ namespace BenchmarkClient
                 {
                     var response = await client.PostAsync(url, content);
                     var responseString = await response.Content.ReadAsStringAsync();
+
+                    if (responseString.Contains("Exception"))
+                        failureCount.Content = (int) failureCount.Content + 1;
 
                     ResponseTextBox.Text += responseString;
                 }

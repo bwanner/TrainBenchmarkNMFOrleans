@@ -243,3 +243,7 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+/SiloRole/railway-models/railway-64.xmi
+/SiloRole/railway-models/railway-4.xmi
+/SiloRole/railway-models/railway-128.xmi
+/TrainBenchmarkCloudWorker/ServiceConfiguration.Cloud.cscfg

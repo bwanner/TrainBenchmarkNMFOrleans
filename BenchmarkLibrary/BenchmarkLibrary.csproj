@@ -76,6 +76,9 @@
     <Reference Include="Orleans.Streams">
       <HintPath>..\..\..\..\..\Source\Repos\NMF\Expressions.Linq.Orleans\bin\Debug\Orleans.Streams.dll</HintPath>
     </Reference>
+    <Reference Include="Orleans.Streams.Stateful">
+      <HintPath>..\..\Orleans.Containers\Orleans.Streams.Stateful\bin\Debug\Orleans.Streams.Stateful.dll</HintPath>
+    </Reference>
     <Reference Include="OrleansCodeGenerator, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Orleans.OrleansCodeGenerator.1.2.2-alpha6\lib\net451\OrleansCodeGenerator.dll</HintPath>
       <Private>True</Private>

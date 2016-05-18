@@ -12,6 +12,7 @@
     <AssemblyName>TrainBenchmarkCloudWorker</AssemblyName>
     <StartDevelopmentStorage>True</StartDevelopmentStorage>
     <Name>TrainBenchmarkCloudWorker</Name>
+    <UseWebProjectPorts>False</UseWebProjectPorts>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -56,11 +57,16 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ClientRoleContent\" />
+    <Folder Include="Profiles" />
     <Folder Include="SiloRoleContent\" />
   </ItemGroup>
   <ItemGroup>
     <DiagnosticsConfiguration Include="ClientRoleContent\diagnostics.wadcfgx" />
     <DiagnosticsConfiguration Include="SiloRoleContent\diagnostics.wadcfgx" />
+  </ItemGroup>
+  <ItemGroup>
+    <PublishProfile Include="Profiles\orleans-trainbenchmarkSt.azurePubxml" />
+    <PublishProfile Include="Profiles\orleans-trainbenchmarkProd.azurePubxml" />
   </ItemGroup>
   <!-- Import the target files for this project template -->
   <PropertyGroup>

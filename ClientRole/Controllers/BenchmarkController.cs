@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using System.Web.Hosting;
 using System.Web.Http;
@@ -15,6 +16,7 @@ using BenchmarkLibrary;
 using ClientRole;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using NMF.Expressions.Linq.Orleans.Model;
+using Orleans.Runtime;
 using Orleans.Streams;
 
 //using WebRole.Models;
@@ -50,9 +52,24 @@ namespace WebRole.Controllers
             return Json(results);
         }
 
-        public Task<IEnumerable<string>> Get()
+        public async Task<string> Get()
         {
-            return Task.FromResult(Directory.EnumerateFiles("Z:\\"));
+            var g = GrainClient.GrainFactory.GetGrain<IManagementGrain>(1);
+            var stats = await g.GetSimpleGrainStatistics();
+            var groupedBySilo = stats.GroupBy(s => s.SiloAddress);
+            var sb = new StringBuilder();
+            foreach (var group in groupedBySilo)
+            {
+                sb.AppendLine(group.Key.ToString());
+                foreach (var value in group)
+                {
+                    sb.AppendLine(value.ToString());
+                }
+
+                sb.AppendLine("----");
+            }
+
+            return sb.ToString();
         }
 
         // POST: api/Benchmark

@@ -13,6 +13,11 @@
     </StreamProviders>
     <SeedNode Address="localhost" Port="22222"/>
     <Messaging ResponseTimeout="600s"/>
+    <Application>
+      <Defaults>
+        <Deactivation AgeLimit="5m"/>
+      </Defaults>
+    </Application>
   </Globals>
   <Defaults>
     <Networking Address="localhost" Port="22222"/>

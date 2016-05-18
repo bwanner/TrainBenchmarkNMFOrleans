@@ -1,16 +1,27 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ServiceDefinition name="TrainBenchmarkCloudWorker" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" schemaVersion="2015-04.2.6">
-  <WorkerRole name="SiloRole" vmsize="Small">
+  <WorkerRole name="SiloRole" vmsize="Standard_D1">
     <ConfigurationSettings>
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" />
       <Setting name="DataConnectionString" />
+      <Setting name="APPINSIGHTS_INSTRUMENTATIONKEY" />
+      <Setting name="Smb_Path" />
+      <Setting name="Smb_User" />
+      <Setting name ="Smb_Password" />
     </ConfigurationSettings>
     <Endpoints>
       <InternalEndpoint name="OrleansSiloEndpoint" protocol="tcp" port="11111" />
       <InternalEndpoint name="OrleansProxyEndpoint" protocol="tcp" port="30000" />
     </Endpoints>
+    <LocalResources>
+      <LocalStorage name="ModelStorage" sizeInMB="2500" />
+    </LocalResources>
+    <Imports>
+      <Import moduleName="RemoteAccess" />
+      <Import moduleName="RemoteForwarder" />
+    </Imports>
   </WorkerRole>
-  <WebRole name="ClientRole" vmsize="Small">
+  <WebRole name="ClientRole" vmsize="Standard_D1">
     <Sites>
       <Site name="Web">
         <Bindings>
@@ -21,9 +32,19 @@
     <ConfigurationSettings>
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" />
       <Setting name="DataConnectionString" />
+      <Setting name="APPINSIGHTS_INSTRUMENTATIONKEY" />
+      <Setting name="Smb_Path" />
+      <Setting name="Smb_User" />
+      <Setting name ="Smb_Password" />
     </ConfigurationSettings>
     <Endpoints>
       <InputEndpoint name="Endpoint1" protocol="http" port="80" />
     </Endpoints>
+    <Imports>
+      <Import moduleName="RemoteAccess" />
+    </Imports>
+    <LocalResources>
+      <LocalStorage name="ModelStorage" sizeInMB="2500" />
+    </LocalResources>
   </WebRole>
 </ServiceDefinition>

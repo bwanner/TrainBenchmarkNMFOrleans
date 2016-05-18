@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BenchmarkLibrary;
 using NMF.Models;
 using NMF.Expressions;
 using NMF.Expressions.Linq;
@@ -17,7 +18,7 @@ using Orleans.Streams.Linq;
 
 namespace TTC2015.TrainBenchmark
 {
-    abstract class TrainRepairOrleans
+    public abstract class TrainRepairOrleans
     {
         public QueryPattern Pattern { get; set; }
         public QueryPattern InjectPattern { get; set; }
@@ -25,27 +26,90 @@ namespace TTC2015.TrainBenchmark
 
         protected IModelContainerGrain<Model> ModelContainerGrain { get; private set; }
 
-        public async Task RepairTrains(IModelContainerGrain<Model> modelContainerGrain, string task, IGrainFactory grainFactory, int[] scatterFactors)
+        public async Task RepairTrains(IModelContainerGrain<Model> modelContainerGrain, BenchmarkSettings settings, IGrainFactory grainFactory)
         {
+            string task = settings.Query;
+            int[] scatterFactors = settings.ScatterFactors;
             ModelContainerGrain = modelContainerGrain;
             var factory = new IncrementalNmfModelStreamProcessorAggregateFactory(grainFactory, modelContainerGrain);
             Random = new Random(0);
 
             if (task == "PosLength")
             {
-                await Fix(
-                    modelPattern:
-                        await
-                            modelContainerGrain.SimpleSelectMany(
-                                model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<ISegment>(), factory, GetScatterFactor(scatterFactors, 0))
-                                .Where(seg => seg.Length < 0, GetScatterFactor(scatterFactors, 1))
-                                .ToNmfModelConsumer(),
-                    action: seg => modelContainerGrain.ExecuteSync((container, elementUri) =>
-                    {
-                        var localSegment = (ISegment) container.Resolve((Uri) elementUri);
-                        localSegment.Length = -localSegment.Length + 1;
-                    }, seg.RelativeUri),
-                    sortKey: seg => string.Format("<segment : {0:0000}>", seg.Id.GetValueOrDefault()));
+                if (settings.QueryVariant == 0)
+                {
+                    await Fix(
+                        modelPattern:
+                            await
+                                modelContainerGrain.SimpleSelectMany(
+                                    model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<ISegment>(), factory, GetScatterFactor(scatterFactors, 0))
+                                    .Where(seg => seg.Length < 0, GetScatterFactor(scatterFactors, 1))
+                                    .ToNmfModelConsumer(),
+                        action: seg => modelContainerGrain.ExecuteSync((container, elementUri) =>
+                        {
+                            var localSegment = (ISegment)container.Resolve((Uri)elementUri);
+                            localSegment.Length = -localSegment.Length + 1;
+                        }, seg.RelativeUri),
+                        sortKey: seg => string.Format("<segment : {0:0000}>", seg.Id.GetValueOrDefault()));
+                }
+                else if (settings.QueryVariant == 1)
+                {
+                    await Fix(
+                        modelPattern:
+                            await
+                                modelContainerGrain.ProcessDistributed(models =>
+                                {
+                                    return models.SelectMany(
+                                        model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<ISegment>())
+                                        .Where(seg => seg.Length < 0);
+                                }
+                                    , factory, GetScatterFactor(scatterFactors, 0))
+                                    .ToNmfModelConsumer(),
+                        action: seg => modelContainerGrain.ExecuteSync((container, elementUri) =>
+                        {
+                            var localSegment = (ISegment) container.Resolve((Uri) elementUri);
+                            localSegment.Length = -localSegment.Length + 1;
+                        }, seg.RelativeUri, true),
+                        sortKey: seg => string.Format("<segment : {0:0000}>", seg.Id.GetValueOrDefault()));
+                }
+
+                else if (settings.QueryVariant == 2)
+                {
+                    await Fix(
+                        modelPattern:
+                            await
+                                modelContainerGrain.ProcessDistributed(models =>
+                                {
+                                    return models.SelectMany(
+                                        model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<ISegment>())
+                                        .Where(seg => seg.Length < 0);
+                                }
+                                    , factory, GetScatterFactor(scatterFactors, 0))
+                                    .ToNmfModelConsumer(),
+                        action: seg => modelContainerGrain.ExecuteSync((container, elementUri) =>
+                        {
+                            var localSegment = (ISegment)container.Resolve((Uri)elementUri);
+                            localSegment.Length = -localSegment.Length + 1;
+                        }, seg.RelativeUri, false),
+                        sortKey: seg => string.Format("<segment : {0:0000}>", seg.Id.GetValueOrDefault()));
+                }
+
+                //await Fix(
+                //    modelPattern:
+                //        await
+                //            modelContainerGrain.SimpleSelectMany(
+                //                model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<ISegment>(), factory,
+                //                GetScatterFactor(scatterFactors, 0))
+                //                .ProcessDistributed(segments => segments.Where(seg => seg.Length <= 0))
+                //                .ToNmfModelConsumer(),
+                //    action: seg => modelContainerGrain.ExecuteSync((container, elementUri) =>
+                //    {
+                //        var localSegment = (ISegment) container.Resolve((Uri) elementUri);
+                //        localSegment.Length = -localSegment.Length + 1;
+                //    }, seg.RelativeUri),
+                //    sortKey: seg => string.Format("<segment : {0:0000}>", seg.Id.GetValueOrDefault()));
+
+
             }
             if (task == "SwitchSensor")
             {
@@ -53,7 +117,8 @@ namespace TTC2015.TrainBenchmark
                 var query =
                     await
                         modelContainerGrain.SimpleSelectMany(
-                            model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<ISwitch>(), factory, GetScatterFactor(scatterFactors, 0))
+                            model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<ISwitch>(), factory,
+                            GetScatterFactor(scatterFactors, 0))
                             .Where(sw => sw.Sensor == null, GetScatterFactor(scatterFactors, 1))
                             .ToNmfModelConsumer();
 
@@ -71,7 +136,8 @@ namespace TTC2015.TrainBenchmark
             {
                 var query = await
                     modelContainerGrain.SimpleSelectMany(
-                        model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<IRoute>(), factory, GetScatterFactor(scatterFactors, 0))
+                        model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<IRoute>(), factory,
+                        GetScatterFactor(scatterFactors, 0))
                         .Where(route => route.Entry != null && route.Entry.Signal == Signal.GO, GetScatterFactor(scatterFactors, 1))
                         .SimpleSelectMany(route => route.Follows.OfType<ISwitchPosition>(), GetScatterFactor(scatterFactors, 2))
                         .Where(swp => swp.Switch.CurrentPosition != swp.Position, GetScatterFactor(scatterFactors, 3))
@@ -96,10 +162,13 @@ namespace TTC2015.TrainBenchmark
                 var query =
                     await
                         modelContainerGrain.SimpleSelectMany(
-                            model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<IRoute>(), factory, GetScatterFactor(scatterFactors, 0))
+                            model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<IRoute>(), factory,
+                            GetScatterFactor(scatterFactors, 0))
                             .SelectMany(route => route.Follows.OfType<ISwitchPosition>(),
-                                (route, position) => new ModelElementTuple<IRoute, ISwitchPosition>(route, position), GetScatterFactor(scatterFactors, 1))
-                            .Where(tuple => tuple.Item2.Switch.Sensor != null && !tuple.Item1.DefinedBy.Contains(tuple.Item2.Switch.Sensor), GetScatterFactor(scatterFactors, 2))
+                                (route, position) => new ModelElementTuple<IRoute, ISwitchPosition>(route, position),
+                                GetScatterFactor(scatterFactors, 1))
+                            .Where(tuple => tuple.Item2.Switch.Sensor != null && !tuple.Item1.DefinedBy.Contains(tuple.Item2.Switch.Sensor),
+                                GetScatterFactor(scatterFactors, 2))
                             .ToNmfModelConsumer();
 
                 await Fix(modelPattern: query,
@@ -139,15 +208,18 @@ namespace TTC2015.TrainBenchmark
                         (tuple, route) => new ModelElementTuple<IRoute, IRoute>(tuple.Item2, route), GetScatterFactor(scatterFactors, 1))
                     .Where(tuple => tuple.Item1 != tuple.Item2 && tuple.Item2.Entry != tuple.Item1.Exit, GetScatterFactor(scatterFactors, 2))
                     .SelectMany(tuple => tuple.Item1.DefinedBy,
-                        (tuple, sensor) => new ModelElementTuple<IRoute, IRoute, ISensor>(tuple.Item1, tuple.Item2, sensor), GetScatterFactor(scatterFactors, 3))
+                        (tuple, sensor) => new ModelElementTuple<IRoute, IRoute, ISensor>(tuple.Item1, tuple.Item2, sensor),
+                        GetScatterFactor(scatterFactors, 3))
                     .SelectMany(tuple => tuple.Item3.Elements,
                         (tuple, element) =>
-                            new ModelElementTuple<IRoute, IRoute, ISensor, ITrackElement>(tuple.Item1, tuple.Item2, tuple.Item3, element), GetScatterFactor(scatterFactors, 4))
+                            new ModelElementTuple<IRoute, IRoute, ISensor, ITrackElement>(tuple.Item1, tuple.Item2, tuple.Item3, element),
+                        GetScatterFactor(scatterFactors, 4))
                     .SelectMany(tuple => tuple.Item4.ConnectsTo,
                         (tuple, element) =>
                             new ModelElementTuple<IRoute, IRoute, ISensor, ITrackElement, ITrackElement>(tuple.Item1, tuple.Item2, tuple.Item3,
                                 tuple.Item4, element), GetScatterFactor(scatterFactors, 5))
-                    .Where(tuple => tuple.Item5.Sensor == null || tuple.Item2.DefinedBy.Contains(tuple.Item5.Sensor), GetScatterFactor(scatterFactors, 6))
+                    .Where(tuple => tuple.Item5.Sensor == null || tuple.Item2.DefinedBy.Contains(tuple.Item5.Sensor),
+                        GetScatterFactor(scatterFactors, 6))
                     .Select(
                         tuple =>
                             new ModelElementTuple<IRoute, IRoute, ITrackElement, ITrackElement>(tuple.Item1, tuple.Item2, tuple.Item4, tuple.Item5))
@@ -243,12 +315,22 @@ namespace TTC2015.TrainBenchmark
 
         public async Task RepairFixed(int count, List<Func<Task>> actions)
         {
+            List<Task> awaitedActions = new List<Task>(actions.Count);
             for (int i = 0; i < count && i < actions.Count; i++)
             {
                 int index = Random.NextInt(actions.Count);
-                await actions[index]();
+                if (i == 0)
+                {
+                    // TODO investigate why this hack is necessary ... prior execution items are not prefixed with //0/.
+                    var guid = await ModelContainerGrain.StartModelUpdate();
+                    await actions[index]();
+                    await ModelContainerGrain.EndModelUpdate(guid);
+                }
+                else
+                    awaitedActions.Add(actions[index]());
                 actions.RemoveAt(index);
             }
+            await Task.WhenAll(awaitedActions);
         }
 
         public async Task RepairProportional(int percentage, List<Func<Task>> actions)
@@ -273,7 +355,7 @@ namespace TTC2015.TrainBenchmark
         }
     }
 
-    class IncrementalTrainRepairOrleans : TrainRepairOrleans
+    public class IncrementalTrainRepairOrleans : TrainRepairOrleans
     {
         private class QueryPattern<T, TModel> : QueryPattern where TModel : IResolvableModel
         {

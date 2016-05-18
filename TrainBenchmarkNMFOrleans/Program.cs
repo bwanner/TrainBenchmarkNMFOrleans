@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BenchmarkLibrary;
 using CollectionHost;
 using NMF.Expressions;
 using NMF.Expressions.Linq.Orleans.Model;
@@ -134,7 +135,8 @@ namespace TTC2015.TrainBenchmark
             TrainRepairOrleans trainRepairOrleans = new IncrementalTrainRepairOrleans();
             var modelContainer = GrainClient.GrainFactory.GetGrain<IModelContainerGrain<Model>>(Guid.NewGuid());
             await modelContainer.LoadModelFromPath(configuration.Target);
-            await trainRepairOrleans.RepairTrains(modelContainer, configuration.Query, GrainClient.GrainFactory);
+            var bc = new BenchmarkSettings() {Query = configuration.Query, ScatterFactors = new int[0]};
+            await trainRepairOrleans.RepairTrains(modelContainer, bc, GrainClient.GrainFactory);
 
             stopwatch.Stop();
             Emit("read", i, 0, null);
@@ -152,7 +154,10 @@ namespace TTC2015.TrainBenchmark
                 var localElements = localActions.Select(x => x.Item1).OrderBy(s => s).ToList();
 
                 if (orleansElements.Count != localElements.Count)
+                {
+                    var diff = orleansElements.Where(x => !localElements.Contains(x)).ToList();
                     throw new ArgumentException();
+                }
                 for (int f = 0; f < orleansElements.Count; f++)
                 {
                     if (orleansElements[f] != localElements[f])
@@ -172,18 +177,23 @@ namespace TTC2015.TrainBenchmark
 
             for (int iter = 0; iter < configuration.IterationCount; iter++)
             {
+                Guid tid;
                 // Repair
                 if (fixedChangeSet)
                 {
                     stopwatch.Restart();
+                    tid = await modelContainer.StartModelUpdate();
                     await trainRepairOrleans.RepairFixed(10, actionsSorted);
+                    await modelContainer.EndModelUpdate(tid);
                     stopwatch.Stop();
                     if (validate)
                         trainRepair.RepairFixed(10, localActionsSorted);
                 }
 
                 stopwatch.Restart();
+                tid = await modelContainer.StartModelUpdate();
                 await trainRepairOrleans.RepairProportional(10, actionsSorted);
+                await modelContainer.EndModelUpdate(tid);
                 stopwatch.Stop();
                 if (validate)
                     trainRepair.RepairProportional(10, localActionsSorted);
