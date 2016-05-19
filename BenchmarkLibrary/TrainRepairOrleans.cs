@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using BenchmarkLibrary;
 using NMF.Models;
@@ -12,8 +11,6 @@ using NMF.Expressions.Linq.Orleans.Model;
 using NMF.Models.Tests.Railway;
 using NMF.Utilities;
 using Orleans;
-using Orleans.Streams;
-using Orleans.Streams.Endpoints;
 using Orleans.Streams.Linq;
 
 namespace TTC2015.TrainBenchmark
@@ -176,10 +173,10 @@ namespace TTC2015.TrainBenchmark
                     {
                         var localMatch = (Tuple<Uri, Uri>) mat;
                         var localRoute = (IRoute) model.Resolve(localMatch.Item1);
-                        var localSwitch = (ISwitch) model.Resolve(localMatch.Item2);
-                        var localSensor = (ISensor) model.Resolve(localSwitch.Sensor.RelativeUri);
+                        var localSwitchPosition = (ISwitchPosition) model.Resolve(localMatch.Item2);
+                        var localSensor = localSwitchPosition.Switch.Sensor;
                         localRoute.DefinedBy.Add(localSensor);
-                    }, new Tuple<Uri, Uri>(match.Item1.RelativeUri, match.Item2.RelativeUri)),
+                    }, new Tuple<Uri, Uri>(match.Item1.RelativeUri, match.Item2.RelativeUri), true), // Forward action here since removal of model items changes identifiers
                     sortKey: match => string.Format("<route : {0:0000}, sensor : {1:0000}, swP : {2:0000}, sw : {3:0000}>",
                         match.Item1.Id.GetValueOrDefault(),
                         match.Item2.Switch.Sensor.Id.GetValueOrDefault(),
@@ -316,21 +313,15 @@ namespace TTC2015.TrainBenchmark
         public async Task RepairFixed(int count, List<Func<Task>> actions)
         {
             List<Task> awaitedActions = new List<Task>(actions.Count);
+            var tid = await ModelContainerGrain.StartModelUpdate();
             for (int i = 0; i < count && i < actions.Count; i++)
             {
                 int index = Random.NextInt(actions.Count);
-                if (i == 0)
-                {
-                    // TODO investigate why this hack is necessary ... prior execution items are not prefixed with //0/.
-                    var guid = await ModelContainerGrain.StartModelUpdate();
-                    await actions[index]();
-                    await ModelContainerGrain.EndModelUpdate(guid);
-                }
-                else
-                    awaitedActions.Add(actions[index]());
+                awaitedActions.Add(actions[index]());
                 actions.RemoveAt(index);
             }
             await Task.WhenAll(awaitedActions);
+            await ModelContainerGrain.EndModelUpdate(tid);
         }
 
         public async Task RepairProportional(int percentage, List<Func<Task>> actions)
