@@ -15,38 +15,39 @@ namespace BenchmarkLibrary
 {
     public class BenchmarkExecutor
     {
-        public static async Task<List<BenchmarkRunResult>> ExecuteBenchmark(BenchmarkSettings settings, string rootPath, string modelRootPath)
+        public static async Task<List<BenchmarkRunResult>> ExecuteBenchmark(BenchmarkSettings settings, string rootPath)
         {
             var runs = new List<BenchmarkRunResult>();
             for (int i = 0; i < settings.Runs; i++)
             {
+                Trace.TraceInformation("Starting run {0}", i);
                 var run = new BenchmarkRunResult {Settings = settings};
                 if (settings.RunType == ExecutionType.Orleans)
-                    run.Runs = await ExecuteRunOrleans(settings, rootPath, modelRootPath);
+                    run.Runs = await ExecuteRunOrleans(settings, rootPath);
                 else if (settings.RunType == ExecutionType.Compare)
-                    run.Runs = await ExecuteRunOrleansAgainstIncremental(settings, rootPath, modelRootPath);
+                    run.Runs = await ExecuteRunOrleansAgainstIncremental(settings, rootPath);
                 else
-                    run.Runs = await ExecuteRun(settings, rootPath, modelRootPath);
+                    run.Runs = await ExecuteRun(settings, rootPath);
                 runs.Add(run);
+                Trace.TraceInformation("Finished run {0}", i);
             }
 
             return runs;
         }
 
-        private static async Task<List<ExecutionInformation>> ExecuteRunOrleans(BenchmarkSettings settings, string rootFolder, string modelRootFolder)
+        private static async Task<List<ExecutionInformation>> ExecuteRunOrleans(BenchmarkSettings settings, string rootFolder)
         {
             var executionList = new List<ExecutionInformation>();
             var fixedChangeSet = string.Equals(settings.ChangeSet, "fixed", StringComparison.InvariantCultureIgnoreCase);
             var expectedNumberOfActions = LoadExpectedResults(0, settings, rootFolder);
-            var modelPath = string.Format("{0}railway-{1}.xmi", modelRootFolder, settings.Size);
-            modelPath = modelPath.Replace("ClientRole", "SiloRole");
+            var modelName = string.Format("railway-{0}.xmi", settings.Size);
 
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
             TrainRepairOrleans trainRepairOrleans = new IncrementalTrainRepairOrleans();
             var modelContainer = GrainClient.GrainFactory.GetGrain<IModelContainerGrain<Model>>(Guid.NewGuid());
-            await modelContainer.LoadModelFromPath(modelPath);
+            await modelContainer.LoadModelFromPath(modelName);
             await trainRepairOrleans.RepairTrains(modelContainer, settings, GrainClient.GrainFactory);
             var tid2 = await modelContainer.StartModelUpdate();
             await modelContainer.EndModelUpdate(tid2);
@@ -127,21 +128,22 @@ namespace BenchmarkLibrary
                     select pair.Item2).ToList();
             }
 
+            await trainRepairOrleans.Reset();
             return executionList;
         }
 
-        private static async Task<List<ExecutionInformation>> ExecuteRunOrleansAgainstIncremental(BenchmarkSettings settings, string rootFolder, string modelRootFolder)
+        private static async Task<List<ExecutionInformation>> ExecuteRunOrleansAgainstIncremental(BenchmarkSettings settings, string rootFolder)
         {
             var executionList = new List<ExecutionInformation>();
             var fixedChangeSet = string.Equals(settings.ChangeSet, "fixed", StringComparison.InvariantCultureIgnoreCase);
             var expectedNumberOfActions = LoadExpectedResults(0, settings, rootFolder);
-            var modelPath = string.Format("{0}railway-{1}.xmi", modelRootFolder, settings.Size);
+            var modelName = string.Format("railway-{0}.xmi", settings.Size);
 
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             var repository = new ModelRepository();
-            var train = repository.Resolve(new Uri(new FileInfo(modelPath).FullName));
-            var railwayContainer = train.Model.RootElements.Single() as RailwayContainer;
+            var model = ModelLoader.Instance.LoadModel<Model>(modelName);
+            var railwayContainer = model.RootElements.Single() as RailwayContainer;
 
             TrainRepair trainRepair = null;
             trainRepair = new IncrementalTrainRepair();
@@ -150,7 +152,7 @@ namespace BenchmarkLibrary
             stopwatch.Start();
             TrainRepairOrleans trainRepairOrleans = new IncrementalTrainRepairOrleans();
             var modelContainer = GrainClient.GrainFactory.GetGrain<IModelContainerGrain<Model>>(Guid.NewGuid());
-            await modelContainer.LoadModelFromPath(modelPath);
+            await modelContainer.LoadModelFromPath(modelName);
             await trainRepairOrleans.RepairTrains(modelContainer, settings, GrainClient.GrainFactory);
             var tid2 = await modelContainer.StartModelUpdate();
             await modelContainer.EndModelUpdate(tid2);
@@ -245,6 +247,7 @@ namespace BenchmarkLibrary
                                  orderby pair.Item1
                                  select pair.Item2).ToList();
             }
+            await trainRepairOrleans.Reset();
 
             return executionList;
         }
@@ -259,17 +262,17 @@ namespace BenchmarkLibrary
             return Convert.ToInt32(line.Split('\t')[iteration + 1]);
         }
 
-        public static Task<List<ExecutionInformation>> ExecuteRun(BenchmarkSettings settings, string rootFolder, string modelRootFolder)
+        public static Task<List<ExecutionInformation>> ExecuteRun(BenchmarkSettings settings, string rootFolder)
         {
             var executionList = new List<ExecutionInformation>();
             var fixedChangeSet = string.Equals(settings.ChangeSet, "fixed", StringComparison.InvariantCultureIgnoreCase);
             var expectedNumberOfActions = LoadExpectedResults(0, settings, rootFolder);
-            var modelPath = string.Format("{0}railway-{1}.xmi", modelRootFolder, settings.Size);
+            var modelName = string.Format("railway-{0}.xmi", settings.Size);
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             var repository = new ModelRepository();
-            var train = repository.Resolve(new Uri(new FileInfo(modelPath).FullName));
-            var railwayContainer = train.Model.RootElements.Single() as RailwayContainer;
+            var model = ModelLoader.Instance.LoadModel<Model>(modelName);
+            var railwayContainer = model.RootElements.Single() as RailwayContainer;
 
             TrainRepair trainRepair = null;
             trainRepair = new IncrementalTrainRepair();

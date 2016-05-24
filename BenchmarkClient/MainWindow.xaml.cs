@@ -47,16 +47,18 @@ namespace BenchmarkClient
             var url = HostUrlTextBlock.Text;
             failureCount.Content = 0;
             ResponseTextBox.Clear();
-            //url = "http://0f3ba8f5f87d4dde91df72b249e36ca5.cloudapp.net/api/benchmark";
             
 
             RunButton.IsEnabled = false;
             ProgressBar.Maximum = jsonContents.Count;
             ProgressBar.Value = 0;
+            List<List<BenchmarkRunResult>> results = new List<List<BenchmarkRunResult>>();
+
             foreach (var benchmarkRequest in jsonContents)
             {
+                ServicePointManager.SetTcpKeepAlive(true, 1000 * 60 * 3, 1000 * 60 * 3);
                 HttpClient client = new HttpClient();
-                client.Timeout = TimeSpan.FromMinutes(60);
+                client.Timeout = TimeSpan.FromMinutes(300);
 
                 var content = new StringContent(JsonConvert.SerializeObject(benchmarkRequest));
                 content.Headers.ContentType = new MediaTypeHeaderValue("text/json");
@@ -64,14 +66,16 @@ namespace BenchmarkClient
                 {
                     var response = await client.PostAsync(url, content);
                     var responseString = await response.Content.ReadAsStringAsync();
+                    results.Add(JsonConvert.DeserializeObject<List<BenchmarkRunResult>>(responseString));
 
                     if (responseString.Contains("Exception"))
                         failureCount.Content = (int) failureCount.Content + 1;
 
-                    ResponseTextBox.Text += responseString;
+                    ResponseTextBox.Text = JsonConvert.SerializeObject(results);
                 }
                 catch(Exception ex)
                 {
+                    failureCount.Content = (int) failureCount.Content + 1;
                     ResponseTextBox.Text += string.Format("Error: {0}", ex.Message);
                 }
 

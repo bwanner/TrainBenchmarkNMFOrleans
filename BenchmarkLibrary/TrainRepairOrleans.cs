@@ -124,7 +124,6 @@ namespace TTC2015.TrainBenchmark
                     {
                         var swi = (ISwitch) container.Resolve((Uri) elementUri);
                         swi.Sensor = new Sensor();
-                        Console.WriteLine("SensorID: {0}", swi.Sensor.RelativeUri);
                     }, sw.RelativeUri, true),
                     sortKey: sw => string.Format("<sw : {0:0000}>", sw.Id.GetValueOrDefault()));
                 ;
@@ -329,9 +328,9 @@ namespace TTC2015.TrainBenchmark
             await RepairFixed(Pattern.NumberOfInvalidElements*percentage/100, actions);
         }
 
-        public void Reset()
+        public async Task Reset()
         {
-            Pattern.Clear();
+            await Pattern.Clear();
         }
 
         public abstract class QueryPattern
@@ -340,8 +339,9 @@ namespace TTC2015.TrainBenchmark
 
             public abstract int NumberOfInvalidElements { get; }
 
-            public virtual void Clear()
+            public virtual Task Clear()
             {
+                return TaskDone.Done;
             }
         }
     }
@@ -369,8 +369,9 @@ namespace TTC2015.TrainBenchmark
 
             public override int NumberOfInvalidElements => ResultConsumer.Items.Count;
 
-            public override void Clear()
+            public override async Task Clear()
             {
+                await Source.TearDown();
                 //Source.Detach();
             }
         }

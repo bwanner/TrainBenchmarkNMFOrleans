@@ -1,20 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ServiceDefinition name="TrainBenchmarkCloudWorker" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" schemaVersion="2015-04.2.6">
-  <WorkerRole name="SiloRole" vmsize="Standard_D1">
+  <WorkerRole name="SiloRole" vmsize="Standard_D1_v2">
     <ConfigurationSettings>
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" />
       <Setting name="DataConnectionString" />
       <Setting name="APPINSIGHTS_INSTRUMENTATIONKEY" />
       <Setting name="Smb_Path" />
       <Setting name="Smb_User" />
-      <Setting name ="Smb_Password" />
+      <Setting name="Smb_Password" />
+      <Setting name="LocalModelFolder" />
     </ConfigurationSettings>
     <Endpoints>
       <InternalEndpoint name="OrleansSiloEndpoint" protocol="tcp" port="11111" />
       <InternalEndpoint name="OrleansProxyEndpoint" protocol="tcp" port="30000" />
     </Endpoints>
     <LocalResources>
-      <LocalStorage name="ModelStorage" sizeInMB="2500" />
+      <LocalStorage name="ModelStorage" sizeInMB="5000" />
     </LocalResources>
     <Imports>
       <Import moduleName="RemoteAccess" />
@@ -35,7 +36,8 @@
       <Setting name="APPINSIGHTS_INSTRUMENTATIONKEY" />
       <Setting name="Smb_Path" />
       <Setting name="Smb_User" />
-      <Setting name ="Smb_Password" />
+      <Setting name="Smb_Password" />
+      <Setting name="LocalModelFolder" />
     </ConfigurationSettings>
     <Endpoints>
       <InputEndpoint name="Endpoint1" protocol="http" port="80" />
@@ -44,7 +46,10 @@
       <Import moduleName="RemoteAccess" />
     </Imports>
     <LocalResources>
-      <LocalStorage name="ModelStorage" sizeInMB="2500" />
+      <LocalStorage name="ModelStorage" sizeInMB="5000" />
     </LocalResources>
+    <Startup>
+      <Task commandLine="Startup.cmd" executionContext="elevated" />
+    </Startup>
   </WebRole>
 </ServiceDefinition>

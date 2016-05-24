@@ -303,6 +303,9 @@
     <Content Include="railway-models\railway-2.xmi">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Startup.cmd">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BenchmarkLibrary\BenchmarkLibrary.csproj">

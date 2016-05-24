@@ -28,26 +28,10 @@ namespace WebRole.Controllers
         // GET: api/Benchmark
         public async Task<JsonResult<List<BenchmarkRunResult>>> Post([FromBody] BenchmarkSettings settings)
         {
-            //var path = HostingEnvironment.MapPath("~/ClientConfiguration.xml");
-            //var config = ClientConfiguration.LoadFromFile(path);
-
-            //if (!AzureClient.IsInitialized)
-            //{
-            //    AzureClient.Initialize(path);
-            //    GrainClient.SetResponseTimeout(TimeSpan.FromSeconds(30));
-            //}
 
             List<BenchmarkRunResult> results;
 
-
-            var modelPath = HostingEnvironment.MapPath("~/railway-models/");
-            if (!RoleEnvironment.IsEmulated)
-            {
-                //modelPath = RoleEnvironment.GetLocalResource("ModelStorage").RootPath + "\\";
-                modelPath = "z:\\";
-            }
-
-            results = await BenchmarkExecutor.ExecuteBenchmark(settings, HostingEnvironment.MapPath("~/"), modelPath);
+            results = await BenchmarkExecutor.ExecuteBenchmark(settings, HostingEnvironment.MapPath("~/"));
 
             return Json(results);
         }

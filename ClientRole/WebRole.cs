@@ -20,8 +20,14 @@ namespace ClientRole
             if (!RoleEnvironment.IsEmulated)
             {
                 var modelPath = RoleEnvironment.GetLocalResource("ModelStorage").RootPath;
-                BenchmarkSetup.SetupOnAzure(modelPath + "\\", RoleEnvironment.GetConfigurationSettingValue("Smb_Path"), RoleEnvironment.GetConfigurationSettingValue("Smb_User"),
+                BenchmarkSetup.SetupOnAzure(modelPath + "\\", RoleEnvironment.GetConfigurationSettingValue("Smb_Path"),
+                    RoleEnvironment.GetConfigurationSettingValue("Smb_User"),
                     RoleEnvironment.GetConfigurationSettingValue("Smb_Password"));
+            }
+            else
+            {
+                var modelPath = RoleEnvironment.GetLocalResource("ModelStorage").RootPath;
+                BenchmarkSetup.SetupOnLocal(RoleEnvironment.GetConfigurationSettingValue("LocalModelFolder"), modelPath);
             }
 
             return base.OnStart();
