@@ -48,8 +48,5 @@
     <LocalResources>
       <LocalStorage name="ModelStorage" sizeInMB="5000" />
     </LocalResources>
-    <Startup>
-      <Task commandLine="Startup.cmd" executionContext="elevated" />
-    </Startup>
   </WebRole>
 </ServiceDefinition>

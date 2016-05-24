@@ -34,7 +34,7 @@ namespace BenchmarkLibrary
 
         public static void SetupOnLocal(string path, string targetModelDir)
         {
-            using(FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using(FileStream fs = new FileStream(path + "railway-all.zip", FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 using (ZipArchive archive = new ZipArchive(fs, ZipArchiveMode.Read))
                 {
@@ -50,6 +50,12 @@ namespace BenchmarkLibrary
             var modelLoader = new AzureModelLoader(targetModelDir);
             ModelLoader.Instance = modelLoader;
         }
+
+        public static void SetupModelLoader(string targetModelDir)
+        {
+            var modelLoader = new AzureModelLoader(targetModelDir);
+            ModelLoader.Instance = modelLoader;
+        }
     }
 
     public class AzureModelLoader : IModelLoader
@@ -58,6 +64,8 @@ namespace BenchmarkLibrary
 
         public AzureModelLoader(string modelRootPath)
         {
+            ModelElement.EnforceModels = true;
+            Model.PromoteSingleRootElement = true;
             _modelRootPath = modelRootPath;
         }
 

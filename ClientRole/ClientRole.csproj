@@ -92,38 +92,39 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="NMF.Collections">
-      <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Debug\NMF.Collections.dll</HintPath>
+      <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Release\NMF.Collections.dll</HintPath>
     </Reference>
     <Reference Include="NMF.Expressions">
-      <HintPath>..\..\..\..\..\Source\Repos\NMF\Expressions.Linq.Orleans\bin\Debug\NMF.Expressions.dll</HintPath>
+      <HintPath>..\..\..\..\..\Source\Repos\NMF\Expressions.Linq.Orleans\bin\Release\NMF.Expressions.dll</HintPath>
     </Reference>
     <Reference Include="NMF.Expressions.Linq">
-      <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Debug\NMF.Expressions.Linq.dll</HintPath>
+      <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Release\NMF.Expressions.Linq.dll</HintPath>
     </Reference>
-    <Reference Include="NMF.Expressions.Linq.Orleans">
-      <HintPath>..\..\..\..\..\Source\Repos\NMF\Expressions.Linq.Orleans\bin\Debug\NMF.Expressions.Linq.Orleans.dll</HintPath>
+    <Reference Include="NMF.Expressions.Linq.Orleans, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Source\Repos\NMF\Expressions.Linq.Orleans\bin\Release\NMF.Expressions.Linq.Orleans.dll</HintPath>
     </Reference>
     <Reference Include="NMF.Models">
-      <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Debug\NMF.Models.dll</HintPath>
+      <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Release\NMF.Models.dll</HintPath>
     </Reference>
     <Reference Include="NMF.Models.Tests">
-      <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models.Tests\bin\Debug\NMF.Models.Tests.dll</HintPath>
+      <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models.Tests\bin\Release\NMF.Models.Tests.dll</HintPath>
     </Reference>
     <Reference Include="NMF.Serialization">
-      <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Debug\NMF.Serialization.dll</HintPath>
+      <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Release\NMF.Serialization.dll</HintPath>
     </Reference>
     <Reference Include="NMF.Utilities">
-      <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Debug\NMF.Utilities.dll</HintPath>
+      <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Release\NMF.Utilities.dll</HintPath>
     </Reference>
     <Reference Include="Orleans, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Orleans.Core.1.2.2-alpha6\lib\net451\Orleans.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Orleans.Collections">
-      <HintPath>..\..\Orleans.Containers\Orleans.Containers\bin\Debug\Orleans.Collections.dll</HintPath>
+      <HintPath>..\..\Orleans.Containers\Orleans.Containers\bin\Release\Orleans.Collections.dll</HintPath>
     </Reference>
     <Reference Include="Orleans.Streams">
-      <HintPath>..\..\Orleans.Containers\Orleans.Streams\bin\Debug\Orleans.Streams.dll</HintPath>
+      <HintPath>..\..\Orleans.Containers\Orleans.Streams\bin\Release\Orleans.Streams.dll</HintPath>
     </Reference>
     <Reference Include="OrleansAzureUtils, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Orleans.OrleansAzureUtils.1.2.2-alpha6\lib\net451\OrleansAzureUtils.dll</HintPath>
@@ -301,9 +302,6 @@
     <Content Include="expected-results\README.md" />
     <None Include="Project_Readme.html" />
     <Content Include="railway-models\railway-2.xmi">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Startup.cmd">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -58,8 +58,9 @@
     <Reference Include="NMF.Expressions.Linq">
       <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Debug\NMF.Expressions.Linq.dll</HintPath>
     </Reference>
-    <Reference Include="NMF.Expressions.Linq.Orleans">
-      <HintPath>..\..\..\..\..\Source\Repos\NMF\Expressions.Linq.Orleans\bin\Debug\NMF.Expressions.Linq.Orleans.dll</HintPath>
+    <Reference Include="NMF.Expressions.Linq.Orleans, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Source\Repos\NMF\Expressions.Linq.Orleans\bin\Release\NMF.Expressions.Linq.Orleans.dll</HintPath>
     </Reference>
     <Reference Include="NMF.Models">
       <HintPath>..\..\..\..\..\Source\Repos\NMF\Models\Models\bin\Debug\NMF.Models.dll</HintPath>

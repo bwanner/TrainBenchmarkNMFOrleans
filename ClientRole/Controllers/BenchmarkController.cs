@@ -28,7 +28,7 @@ namespace WebRole.Controllers
         // GET: api/Benchmark
         public async Task<JsonResult<List<BenchmarkRunResult>>> Post([FromBody] BenchmarkSettings settings)
         {
-
+            BenchmarkSetup.SetupModelLoader(RoleEnvironment.GetConfigurationSettingValue("LocalModelFolder"));
             List<BenchmarkRunResult> results;
 
             results = await BenchmarkExecutor.ExecuteBenchmark(settings, HostingEnvironment.MapPath("~/"));
