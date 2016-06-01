@@ -14,6 +14,10 @@ using NMF.Models;
 using NMF.Models.Tests.Railway;
 using NMF.Utilities;
 using Orleans;
+using Orleans.Streams;
+using Orleans.Streams.Endpoints;
+using Orleans.Streams.Linq;
+using Orleans.Streams.Messages;
 
 namespace TTC2015.TrainBenchmark
 {
@@ -95,6 +99,43 @@ namespace TTC2015.TrainBenchmark
                     //ExecuteRun(i);
                     await ExecuteRunOrleans(i);
                 }
+
+                //var sb = new StringBuilder();
+                //var provider = new StreamMessageSender<int>(GrainClient.GetStreamProvider("CollectionStreamProvider"));
+                //provider.FlushQueueSize = 5000;
+                //var query = await provider.Select(x => x, new DefaultStreamProcessorAggregateFactory(GrainClient.GrainFactory));
+                //var consumer = new TransactionalStreamConsumer(GrainClient.GetStreamProvider("CollectionStreamProvider"));
+                //int itemCounter = 0;
+                //List<long> times = new List<long>();
+
+                //consumer.MessageDispatcher.Register<ItemMessage<int>>((msg) =>
+                //{
+                //    times.Add(DateTime.Now.Ticks);
+                //    return TaskDone.Done;
+                //});
+                //await consumer.SetInput(await query.GetOutputStreams());
+
+                //for (int i = 1; i <= 10; i++)
+                //{
+                //    times = new List<long>();
+                //    var l = Enumerable.Range(0, 5000 * i).ToList();
+                //    var tid = Guid.NewGuid();
+                //    long startTicks = DateTime.Now.Ticks;
+                //    await provider.StartTransaction(tid);
+                //    for (int f = 0; f < l.Count; f++)
+                //    {
+                //        provider.EnqueueMessage(new ItemMessage<int>(l[f].SingleValueToList()));
+                //    }
+                //    await provider.EndTransaction(tid);
+                //    long endTicks = DateTime.Now.Ticks;
+
+                //    sb.AppendLine(string.Format("Number of items: {0}", l.Count));
+                //    sb.AppendLine(string.Format("Ticks last: {0}, First result arrived: {1}, Last result arrived: {2}", (endTicks - startTicks) / TimeSpan.TicksPerMillisecond,
+                //        (times.Min() - startTicks) / TimeSpan.TicksPerMillisecond, (times.Max() - startTicks) / TimeSpan.TicksPerMillisecond));
+                //}
+
+
+                //Console.WriteLine(sb.ToString());
             }
             catch (Exception ex)
             {

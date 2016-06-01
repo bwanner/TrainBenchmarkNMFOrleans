@@ -15,17 +15,25 @@ using System.Web.Http.Results;
 using BenchmarkLibrary;
 using ClientRole;
 using Microsoft.WindowsAzure.ServiceRuntime;
+using NMF.Expressions.Linq.Orleans;
 using NMF.Expressions.Linq.Orleans.Model;
+using NMF.Models;
+using NMF.Models.Tests.Railway;
+using NMF.Utilities;
 using Orleans.Runtime;
 using Orleans.Streams;
+using Orleans.Streams.Endpoints;
+using Orleans.Streams.Linq;
+using Orleans.Streams.Messages;
+using Orleans.Streams.Stateful.Messages;
 
 //using WebRole.Models;
 
 namespace WebRole.Controllers
 {
-    public class BenchmarkController : ApiController
+    public class NmfTestcontroller : ApiController
     {
-        // GET: api/Benchmark
+        // GET: api/Test
         public async Task<JsonResult<List<BenchmarkRunResult>>> Post([FromBody] BenchmarkSettings settings)
         {
             BenchmarkSetup.SetupModelLoader(RoleEnvironment.GetLocalResource("ModelStorage").RootPath);
@@ -36,22 +44,40 @@ namespace WebRole.Controllers
             return Json(results);
         }
 
-        public async Task<string> Get()
+        public async Task<string> Get(int flushSize = 512, int modelSize = 32, int multiplex = 1)
         {
-            var g = GrainClient.GrainFactory.GetGrain<IManagementGrain>(1);
-            var stats = await g.GetSimpleGrainStatistics();
-            var groupedBySilo = stats.GroupBy(s => s.SiloAddress);
-            var sb = new StringBuilder();
-            foreach (var group in groupedBySilo)
-            {
-                sb.AppendLine(group.Key.ToString());
-                foreach (var value in group)
-                {
-                    sb.AppendLine(value.ToString());
-                }
+            var modelGrain = GrainClient.GrainFactory.GetGrain<IModelContainerGrain<Model>>(Guid.NewGuid());
+            await modelGrain.LoadModelFromPath(string.Format("railway-{0}.xmi", modelSize));
 
-                sb.AppendLine("----");
+            var factory = new IncrementalNmfModelStreamProcessorAggregateFactory(GrainClient.GrainFactory, modelGrain);
+            var query = await modelGrain.SimpleSelectMany(
+                model => model.RootElements.Single().As<RailwayContainer>().Descendants().OfType<ISegment>(), factory, multiplex)
+                .Where(seg => seg.Length < 0, 1);
+
+            var consumer = new TransactionalStreamConsumer(GrainClient.GetStreamProvider("CollectionStreamProvider"));
+            List<long> times = new List<long>();
+
+            consumer.MessageDispatcher.Register<RemoteItemAddMessage<ISegment>>((msg) =>
+            {
+                times.Add(DateTime.Now.Ticks);
+                return TaskDone.Done;
+            });
+            await consumer.SetInput(await query.GetOutputStreams());
+
+            var sb = new StringBuilder();
+
+            for (int i = 1; i <= 10; i++)
+            {
+                long startTicks = DateTime.Now.Ticks;
+                await modelGrain.EnumerateToSubscribers();
+                long endTicks = DateTime.Now.Ticks;
+
+                sb.AppendLine(string.Format("Number of items: {0}", times.Count));
+                sb.AppendLine(string.Format("Ticks last: {0}, First result arrived: {1}, Last result arrived: {2}", (endTicks - startTicks) / TimeSpan.TicksPerMillisecond,
+                    (times.Min() - startTicks) / TimeSpan.TicksPerMillisecond, (times.Max() - startTicks) / TimeSpan.TicksPerMillisecond));
+                times.Clear();
             }
+       
 
             return sb.ToString();
         }

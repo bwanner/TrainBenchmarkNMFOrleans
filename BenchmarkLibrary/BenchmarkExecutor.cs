@@ -86,18 +86,14 @@ namespace BenchmarkLibrary
                 if (fixedChangeSet)
                 {
                     stopwatch.Restart();
-                    var tid1 = await modelContainer.StartModelUpdate();
                     await trainRepairOrleans.RepairFixed(10, actionsSorted);
-                    await modelContainer.EndModelUpdate(tid1);
                     stopwatch.Stop();
                 }
 
                 else
                 {
                     stopwatch.Restart();
-                    var tid = await modelContainer.StartModelUpdate();
                     await trainRepairOrleans.RepairProportional(10, actionsSorted);
-                    await modelContainer.EndModelUpdate(tid);
                     stopwatch.Stop();
                 }
                 executionList.Add(new ExecutionInformation()

@@ -65,7 +65,7 @@ namespace BenchmarkLibrary
         public AzureModelLoader(string modelRootPath)
         {
             ModelElement.EnforceModels = true;
-            Model.PromoteSingleRootElement = true;
+            Model.PromoteSingleRootElement = false;
             _modelRootPath = modelRootPath;
         }
 

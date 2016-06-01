@@ -13,6 +13,9 @@
     </StreamProviders>
     <SeedNode Address="localhost" Port="22222"/>
     <Messaging ResponseTimeout="600s"/>
+    <BootstrapProviders>
+      <Provider Type="Orleans.Streams.Partitioning.PartitionGrainBootstrapProvider" Name="PartitionGrain" />
+    </BootstrapProviders>
   </Globals>
   <Defaults>
     <Networking Address="localhost" Port="22222"/>

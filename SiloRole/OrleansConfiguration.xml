@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <OrleansConfiguration xmlns="urn:orleans">
   <Globals>
+    <Liveness LivenessType="AzureTable" />
     <StorageProviders>
       <Provider Type="Orleans.Storage.MemoryStorage" Name="MemoryStore" />
       <Provider Type="Orleans.Storage.MemoryStorage" Name="Default" />
@@ -9,21 +10,24 @@
     </StorageProviders>
     <StreamProviders>
       <Provider Type="Orleans.Providers.Streams.SimpleMessageStream.SimpleMessageStreamProvider" Name="SimpleStreamProvider" OptimizeForImmutableData="false"/>
-      <Provider Type="Orleans.Providers.Streams.SimpleMessageStream.SimpleMessageStreamProvider" Name="CollectionStreamProvider" OptimizeForImmutableData="false"/>
+      <Provider Type="Orleans.Providers.Streams.SimpleMessageStream.SimpleMessageStreamProvider" Name="CollectionStreamProvider" OptimizeForImmutableData="true"/>
     </StreamProviders>
+    <BootstrapProviders>
+      <Provider Type="Orleans.Streams.Partitioning.PartitionGrainBootstrapProvider" Name="PartitionGrain" />
+    </BootstrapProviders>
     <SeedNode Address="localhost" Port="22222"/>
     <Messaging ResponseTimeout="1200s"/>
     <Application>
       <Defaults>
-        <Deactivation AgeLimit="5m"/>
+        <Deactivation AgeLimit="15m"/>
       </Defaults>
     </Application>
   </Globals>
   <Defaults>
     <Networking Address="localhost" Port="22222"/>
     <ProxyingGateway Address="localhost" Port="40000" />
-    <Tracing DefaultTraceLevel="Info" TraceToConsole="true" TraceToFile="{0}-{1}.log" PropagateActivityId="false" BulkMessageLimit="1000">
-       <TraceLevelOverride LogPrefix="Application" TraceLevel="Info" />
+    <Tracing DefaultTraceLevel="Warning" TraceToConsole="true" TraceToFile="{0}-{1}.log" PropagateActivityId="false" BulkMessageLimit="1000">
+       <TraceLevelOverride LogPrefix="Application" TraceLevel="Warning" />
        <!--
        <TraceLevelOverride LogPrefix="Runtime.Dispatcher" TraceLevel="Verbose" />
        <TraceLevelOverride LogPrefix="AssemblyLoader.Silo" TraceLevel="Warning" />

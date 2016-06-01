@@ -16,6 +16,7 @@ using System.Windows.Shapes;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading;
 using BenchmarkLibrary;
 using Microsoft.Win32;
 using Newtonsoft.Json;
