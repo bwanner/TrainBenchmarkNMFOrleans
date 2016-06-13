@@ -9,11 +9,11 @@
         Title="Benchmark Client" Height="397.003" Width="749.806">
     <Grid>
         <Button x:Name="SelectFileButton" Content="Choose file" HorizontalAlignment="Left" Margin="423,47,0,0" VerticalAlignment="Top" Width="75" Click="SelectFileButton_Click"/>
-        <TextBlock x:Name="FileTextBlock" HorizontalAlignment="Left" Margin="40,51,0,0" TextWrapping="Wrap" Text="..." VerticalAlignment="Top" Width="360" Height="25"  />
+        <TextBlock x:Name="FileTextBlock" HorizontalAlignment="Left" Margin="40,40,0,0" TextWrapping="Wrap" Text="..." VerticalAlignment="Top" Width="360" Height="45"  />
         <TextBox x:Name="ResponseTextBox" HorizontalAlignment="Left" Height="224" Margin="25,90,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="473"/>
         <Button x:Name="RunButton" Content="Start" HorizontalAlignment="Left" Margin="423,325,0,0" VerticalAlignment="Top" Width="75" Click="RunButton_Click"/>
         <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Left" Height="10" Margin="25,330,0,0" VerticalAlignment="Top" Width="289"/>
-        <TextBox x:Name="HostUrlTextBlock" HorizontalAlignment="Left" Height="23" Margin="170,10,0,0" TextWrapping="Wrap" Text="http://orleans-trainbenchmark.cloudapp.net/api/benchmark" VerticalAlignment="Top" Width="328"/>
+        <TextBox x:Name="HostUrlTextBlock" HorizontalAlignment="Left" Height="23" Margin="170,10,0,0" TextWrapping="Wrap" Text="http://orleans-trainbenchmark.cloudapp.net/api/benchmark/post" VerticalAlignment="Top" Width="328" />
         <Label x:Name="failureCount" Content="0" HorizontalAlignment="Left" Margin="338,323,0,0" VerticalAlignment="Top" Foreground="#FFBF1F1F"/>
         <ListBox x:Name="listBox1" HorizontalAlignment="Left" Height="100" Margin="557,134,0,0" VerticalAlignment="Top" Width="142">
             <System:Int32>2</System:Int32>

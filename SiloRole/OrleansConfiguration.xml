@@ -16,10 +16,10 @@
       <Provider Type="Orleans.Streams.Partitioning.PartitionGrainBootstrapProvider" Name="PartitionGrain" />
     </BootstrapProviders>
     <SeedNode Address="localhost" Port="22222"/>
-    <Messaging ResponseTimeout="1200s"/>
+    <Messaging ResponseTimeout="7200s"/>
     <Application>
       <Defaults>
-        <Deactivation AgeLimit="15m"/>
+        <Deactivation AgeLimit="60m"/>
       </Defaults>
     </Application>
   </Globals>

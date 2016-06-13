@@ -49,7 +49,6 @@ namespace BenchmarkClient
             failureCount.Content = 0;
             ResponseTextBox.Clear();
             
-
             RunButton.IsEnabled = false;
             ProgressBar.Maximum = jsonContents.Count;
             ProgressBar.Value = 0;

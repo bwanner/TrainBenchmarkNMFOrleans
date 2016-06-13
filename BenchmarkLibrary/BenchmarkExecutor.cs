@@ -8,6 +8,7 @@ using NMF.Expressions.Linq.Orleans.Model;
 using NMF.Models;
 using NMF.Models.Repository;
 using NMF.Models.Tests.Railway;
+using NMF.Utilities;
 using Orleans;
 using TTC2015.TrainBenchmark;
 
@@ -46,8 +47,14 @@ namespace BenchmarkLibrary
             stopwatch.Start();
 
             TrainRepairOrleans trainRepairOrleans = new IncrementalTrainRepairOrleans();
-            var modelContainer = GrainClient.GrainFactory.GetGrain<IModelContainerGrain<Model>>(Guid.NewGuid());
-            await modelContainer.LoadModelFromPath(modelName);
+            var partitionManager = GrainClient.GrainFactory.GetGrain<IModelSiloGrainManagerGrain<Model>>(Guid.NewGuid());
+            var modelContainer = await partitionManager.SetupModelAcrossCluster(modelName);
+            //var modelContainer = GrainClient.GrainFactory.GetGrain<IModelContainerGrain<Model>>(Guid.NewGuid());
+
+            //await modelContainer.LoadModelFromPath(modelName);
+
+            //var partitionManager = GrainClient.GrainFactory.GetGrain<IModelSiloGrainManagerGrain<Model>>(modelContainer.GetPrimaryKey());
+            //partitionManager.GetModelSiloGrainForSilo()
             await trainRepairOrleans.RepairTrains(modelContainer, settings, GrainClient.GrainFactory);
             var tid2 = await modelContainer.StartModelUpdate();
             await modelContainer.EndModelUpdate(tid2);
@@ -254,8 +261,12 @@ namespace BenchmarkLibrary
         {
             string fileName = String.Format("{0}-{1}.tsv", settings.ChangeSet == "fixed" ? "fixed" : "proportional", settings.Query);
             string[] lines = File.ReadAllLines((rootFolder + "/expected-results/" + fileName));
-            var line = lines.Single(l => l.StartsWith(settings.Size.ToString() + '\t'));
-            return Convert.ToInt32(line.Split('\t')[iteration + 1]);
+            var line = lines.FirstOrDefault(l => l.StartsWith(settings.Size.ToString() + '\t'));
+            if (line != null)
+            {
+                return Convert.ToInt32(line.Split('\t')[iteration + 1]);
+            }
+            return 0;
         }
 
         public static Task<List<ExecutionInformation>> ExecuteRun(BenchmarkSettings settings, string rootFolder)
